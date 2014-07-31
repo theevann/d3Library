@@ -1,0 +1,9 @@
+# Shortcut => GIT CONSOLE
+*.exe
+*.lnk
+
+# Test with notepad
+new*
+
+#Others
+wikiMap
