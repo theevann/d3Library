@@ -5,5 +5,8 @@
 # Test with notepad
 new*
 
+#Cloud9
+.c9
+
 #Others
 wikiMap
