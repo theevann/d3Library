@@ -289,7 +289,7 @@
 		
 		//Draw cross representing the nodes
 		
-		for(j = 0 ; j < this.yOffset.length*this.xOffset.length ; j++)
+		for(var j = 0 ; j < this.yOffset.length*this.xOffset.length ; j++)
 		{
 			var row = parseInt(j/this.xOffset.length);
 			var offset = j%this.xOffset.length;
