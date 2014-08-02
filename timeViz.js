@@ -118,7 +118,7 @@
 			 extentTime[1] = frameTime+parseInt(this.scalingPeriod/2);
 		}
 		
-		extentValue[0] = d3.min(data, function(d) {
+		extentValue[0] = d3.min(this.data, function(d) {
 			var min = d[0].value;
 			for(var j = extentTime[0]+1 ; j < extentTime[1] ; j++){
 				min = (d[j].value < min)? d[j].value : min;
@@ -126,7 +126,7 @@
 			return min;
 		});
 		
-		extentValue[1] = d3.max(data, function(d) {
+		extentValue[1] = d3.max(this.data, function(d) {
 			var max = d[extentTime[0]].value;
 			for(var j = extentTime[0]+1 ; j < extentTime[1]; j++){
 				max = (d[j].value > max)? d[j].value : max;
