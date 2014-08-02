@@ -1,5 +1,5 @@
 /**
- * @author Evann
+ * @author Evann Courdier
  */
 
 /** time2DVisualisation.js
