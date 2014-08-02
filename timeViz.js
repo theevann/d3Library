@@ -2,7 +2,7 @@
  * @author Evann
  */
 
-/** rectInterpolator.js
+/** time2DVisualisation.js
  * CREATED ON 31/07/2014
  * To be used to create graphical time visualisation interpolating data from point creating a rectangle
  */
@@ -251,7 +251,7 @@
 		var v = new Array();
 		var k, row = 0;
 		
-		for(i = 0 ; i < this.dimension.y ; i+=taillePas){
+		for(var i = 0 ; i < this.dimension.y ; i+=taillePas){
 			for(var l = 0 ; l < this.yOffset.length-1 ; l++){
 				row = (i >= (this.yOffset[l]/100)*this.dimension.y && i < (this.yOffset[l+1]/100)*this.dimension.y)? l : row;
 			}
