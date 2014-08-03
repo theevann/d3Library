@@ -250,7 +250,7 @@
 		var gr = this.svg.append("g").attr("index",time).attr("class","group");
 		
 		var vInterpolator = [];
-		var dataUsed = []
+		var dataUsed = [];
 		var row = 0, offset = 0;
 		
 		for(var j = 0 ; j < this.xOffset.length*(this.yOffset.length-1); j++){
