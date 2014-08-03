@@ -1,63 +1,85 @@
 /**
  * @author Evann Courdier
- */
-
-/** time2DVisualisation.js
+ *
+ *  time2DVisualisation.js
  * CREATED ON 31/07/2014
  * To be used to create graphical time visualisation interpolating data from point creating a rectangle
+ * 
  */
  
 (function(){
 	var formatValue = d3.format(",.2f");
 	var formatDate = function(d) { return formatValue(d) ; };
-	var taillePas = 5; // height of the gradient line => the bigger it is, the less precise it will be ((has to be integer > 0)			
+	var taillePas = 2; // height of the gradient line => the bigger it is, the less precise it will be ((has to be integer > 0)			
 	
-	/* param: 
+	/** param: 
 	* Object{
-	*	div,
-	*	xOffset,
-	*	yOffset,
-	*	data,
+	*	container, // required
+	*	xOffset, // required
+	*	yOffset, // required
+	*	data, // required
+	* 	valueAccessor, // default function(d){return d.value;};
+	* 	valueArrayAccessor, // default function(d){return d;};
 	*	dataName,
-	*	scalingPeriod,
-	*	speed, (ms per frame)
-	* 	step,
-	*	colorScale,
-	*	window = [startFrom,endAt]
+	*	scalingPeriod, // default 0 (==> 0 mean for whole period, otherwise scalingPeriod mean the number of frame used to compute the scale at a time t)
+	*	speed, (ms per frame) // default 1000 (==> number of ms per frame)
+	* 	step, // default 1 (==> plot graph for each step of data)
+	*	colorScale, // default ["blue","red"]
+	*	window = [startFrom,endAt],  default whole data
 	* }
+	* 
+	*   Expected default input data : 
 	* 
 	* 	data[
 	* 		[{date,value},{date,value},...],
 	*		[{date,value},{date,value},...],
 	* 		...
 	*		]
+	* 
+	* Note : data must be an array containing the points
+	* You can define the accessor to get the array of records from a point and the accessor to get the value from a record
+	* 
 	*/
-	
-	time2DVisualisation = function (args){
 		
-		this.container = d3.select(args.div);
+	time2DVisualisation = function (args){
+		var that = this;
+		this.data = new Array();
+		
+		this.container = d3.select(args.container);
 		this.xOffset = args.xOffset;
 		this.yOffset = args.yOffset;
 		this.data = args.data;
+		this.valueAccessor = function(d){return parseFloat((args.valueAccessor && args.valueAccessor(d)) || d.value);};
+		this.valueArrayAccessor = args.valueArrayAccessor || function(d){return d;};
 		this.dataName = args.dataName || "";
 		this.scalingPeriod = args.scalingPeriod ||  0;
 		this.speed = args.speed ||  1000;
 		this.colorScale = args.color || ["blue","red"];
 		this.step = args.step || 1;
 		
-		this.width = parseFloat(this.container.style("width"))*0.95,
+		if(!(this.xOffset && this.yOffset && this.data && this.container[0][0])){
+			throw "Some required elements missing";
+		}
+		if(this.xOffset.length*this.yOffset.length != this.data.length){
+			throw "Incorrect numbers in data or offsets : xOffset.length*yOffset.length = data.length";
+		}
+			
+		this.width = parseFloat(this.container.style("width"))*0.95;
 		this.height = parseFloat(this.container.style("height"))*0.99;
 		this.dimension = {x : parseInt(0.9*this.width), y : parseInt(0.95*this.height)};
 		
 		this.dataStart = 0;
 		this.dataEnd = this.data[0].length;
 		this.repStart = (args.window && args.window[0]) || 0;
-		this.repEnd = (args.window && args.window[1]) || this.data[0].length;
+		this.repEnd = (args.window && args.window[1]) || this.valueArrayAccessor(this.data[0]).length;
 		
 		this.numRepresentation = 0;
 		this.frame = this.repStart;
 		this.active = false;
 		
+		if(this.xOffset.length*this.yOffset.length != this.data.length){
+			throw "Incorrect numbers in data or offsets : xOffset.length*yOffset.length = data.length";
+		}
 		
 		//Remove and create new SVG
 		this.container.select("svg").remove();
@@ -65,7 +87,6 @@
 				.attr("width", this.width)
 				.attr("height", this.height);
 	};
-	
 	
 	time2DVisualisation.prototype.play = function(){
 		this.createTimeRepresentation(this.frame,this.repEnd,this.step,this.speed);
@@ -99,12 +120,13 @@
 	//Find extent over specific period of time around a given time
 	
 	time2DVisualisation.prototype.findExtent = function(frameTime){
+		var that = this;
 		var extentTime = [this.dataStart, this.dataEnd];
 		var extentValue = new Array();
 		
 		if(this.dataEnd - this.dataStart <= this.scalingPeriod){
-			extentValue[0] = d3.min(this.data, function(c) { return d3.min(c, function(d) { return d.value; }); });
-			extentValue[1] = d3.max(this.data, function(c) { return d3.max(c, function(d) { return d.value; }); });
+			extentValue[0] = d3.min(this.data, function(c) { return d3.min(that.valueArrayAccessor(c), function(d) { return that.valueAccessor(d); }); });
+			extentValue[1] = d3.max(this.data, function(c) { return d3.max(that.valueArrayAccessor(c), function(d) { return that.valueAccessor(d); }); });
 			return extentValue;
 		}
 		else if((frameTime - this.dataStart) < parseInt(this.scalingPeriod/2)){
@@ -119,17 +141,17 @@
 		}
 		
 		extentValue[0] = d3.min(this.data, function(d) {
-			var min = d[0].value;
+			var min = that.valueAccessor(that.valueArrayAccessor(d[0]));
 			for(var j = extentTime[0]+1 ; j < extentTime[1] ; j++){
-				min = (d[j].value < min)? d[j].value : min;
+				min = (that.valueAccessor(that.valueArrayAccessor(d[j])) < min)? that.valueAccessor(that.valueArrayAccessor(d[j])) : min;
 			}
 			return min;
 		});
 		
 		extentValue[1] = d3.max(this.data, function(d) {
-			var max = d[extentTime[0]].value;
+			var max = that.valueAccessor(that.valueArrayAccessor(d[0]));
 			for(var j = extentTime[0]+1 ; j < extentTime[1]; j++){
-				max = (d[j].value > max)? d[j].value : max;
+				max = (that.valueAccessor(that.valueArrayAccessor(d[j])) > max)? that.valueAccessor(that.valueArrayAccessor(d[j])) : max;
 			}
 			return max;
 		});
@@ -141,17 +163,17 @@
 	//Function creating scale and axis
 	
 	time2DVisualisation.prototype.initColorAndScale = function(){
-		
+		var that = this;
 		var extent = new Array();
 		
 		//Find the extent of values for the scale depending on the chosen scaling period
 		if(this.scalingPeriod == 0){ //Case if scaling period = whole time
-			extent[0] = d3.min(this.data, function(c) { return d3.min(c, function(d) { return d.value; }); });
-			extent[1] = d3.max(this.data, function(c) { return d3.max(c, function(d) { return d.value; }); });
+			extent[0] = d3.min(this.data, function(c) { return d3.min(that.valueArrayAccessor(c), function(d) { return that.valueAccessor(d); }); });
+			extent[1] = d3.max(this.data, function(c) { return d3.max(that.valueArrayAccessor(c), function(d) { return that.valueAccessor(d); }); });
 		}
 		else if(this.scalingPeriod == 1){ //Case if scaling period = one frame
-			extent[0] = d3.min(this.data, function(d) { return d[this.frame].value; });
-			extent[1] = d3.max(this.data, function(d) { return d[this.frame].value; });
+			extent[0] = d3.min(this.data, function(d) { return that.valueAccessor(that.valueArrayAccessor(d)[that.frame]); });
+			extent[1] = d3.max(this.data, function(d) { return that.valueAccessor(that.valueArrayAccessor(d)[that.frame]); });
 		}
 		else
 			extent = this.findExtent(this.frame);
@@ -166,10 +188,10 @@
 		var domainColor = new Array();
 		var crl1 = this.colorScale.length;
 		for(var j = 0 ; j < crl1 ; j++){
-			domainColor[j] = parseInt(this.min + j*(this.max-this.min)/(crl1-1));
+			domainColor[j] = parseFloat(this.min + j*(this.max-this.min)/(crl1-1));
 		}
 		
-		this.color = d3.scale.linear()
+		col = this.color = d3.scale.linear()
 			.domain(domainColor)
 			.range(this.colorScale);
 				
@@ -225,7 +247,7 @@
 	//Function for creating a color map at the time index given (between 0 and max)
 	
 	time2DVisualisation.prototype.createRepresentation = function(time){
-		
+		var that = this;
 		//Redraw Scale depending on the scaling period
 		this.initColorAndScale();
 		
@@ -234,23 +256,25 @@
 		
 		var vInterpolator = new Array;
 		var dataUsed = new Array();
+		var row = 0, offset = 0;
 		
 		for(var j = 0 ; j < this.xOffset.length*(this.yOffset.length-1); j++){
-			var row = parseInt(j/this.xOffset.length);
-			var offset = j%this.xOffset.length;
-			dataUsed[0] = this.data[offset+this.xOffset.length*row][time].value;
-			dataUsed[1] = this.data[offset+this.xOffset.length*(row+1)][time].value;
+			row = parseInt(j/this.xOffset.length);
+			offset = j%this.xOffset.length;
+			dataUsed[0] = that.valueAccessor(that.valueArrayAccessor(that.data[offset+that.xOffset.length*row])[time]);
+			dataUsed[1] = that.valueAccessor(that.valueArrayAccessor(that.data[offset+that.xOffset.length*(row+1)])[time]);
 			vInterpolator[j] = d3.interpolate(dataUsed[0],dataUsed[1]);
 		}
 		
-		var minT = formatValue(d3.min(this.data, function(c) { return c[time].value; }));
-		var maxT = formatValue(d3.max(this.data, function(c) { return c[time].value; }));
-		d3.select("#date").text(this.data[0][time].date + " / Min : " + minT + ", Max : " + maxT);
+		var minT = formatValue(d3.min(this.data, function(c) { return that.valueAccessor(that.valueArrayAccessor(c)[time]); }));
+		var maxT = formatValue(d3.max(this.data, function(c) { return that.valueAccessor(that.valueArrayAccessor(c)[time]); }));
+		this.currentDate = that.valueArrayAccessor(that.data[0])[time].date;
 		
 		var c = new Array();
 		var v = new Array();
-		var k, row = 0;
+		var k;
 		
+		row = 0;
 		for(var i = 0 ; i < this.dimension.y ; i+=taillePas){
 			for(var l = 0 ; l < this.yOffset.length-1 ; l++){
 				row = (i >= (this.yOffset[l]/100)*this.dimension.y && i < (this.yOffset[l+1]/100)*this.dimension.y)? l : row;
@@ -282,7 +306,7 @@
 				.attr("x", 10)
 				.attr("y", 10+i)
 				.attr("width", this.dimension.x)
-				.attr("height",taillePas)
+				.attr("height",taillePas+1) // +1 for mozilla 
 				.attr("fill", "url(#area-gradient" + i +")");
 				
 		}
@@ -291,8 +315,8 @@
 		
 		for(var j = 0 ; j < this.yOffset.length*this.xOffset.length ; j++)
 		{
-			var row = parseInt(j/this.xOffset.length);
-			var offset = j%this.xOffset.length;
+			row = parseInt(j/this.xOffset.length);
+			offset = j%this.xOffset.length;
 			
 			gr.append("line")
 					.attr("x1",10+(this.dimension.x)*this.xOffset[offset]/100+5)
@@ -316,6 +340,7 @@
 	// Auxiliary function to stop time representation
 	
 	time2DVisualisation.prototype.triggeredByTimer = function(time, num, end){
+		var that = this;
 		if(this.numRepresentation == num && this.active == true){
 			this.frame = time;
 			this.createRepresentation(time);
@@ -328,9 +353,9 @@
 	//Function to create an Animation, n.b.: here a closure is needed to keep the value of i
 	
 	time2DVisualisation.prototype.createTimeRepresentation = function(start,end, frameStep, timeStep){
+		var that = this;
 		this.numRepresentation++;
 		this.active = true;
-		var that = this;
 		
 		for(var i = start ; i < end ; i+=frameStep)
 		{
