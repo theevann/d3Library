@@ -250,7 +250,7 @@
 		var gr = this.svg.append("g").attr("index",time).attr("class","group");
 		
 		var vInterpolator = [];
-		var dataUsed = []
+		var dataUsed = [];
 		var row = 0, offset = 0;
 		
 		for(var j = 0 ; j < this.xOffset.length*(this.yOffset.length-1); j++){
@@ -350,12 +350,14 @@
 		this.numRepresentation++;
 		this.active = true;
 		
+		var f1 = 	(function(f,g,h){
+						return function(){ that.triggeredByTimer(f,g,h);};
+					});
+		
 		for(var i = start ; i < end ; i+=frameStep)
 		{
 			setTimeout(
-					(function(f,g,h){
-						return function(){ that.triggeredByTimer(f,g,h);};
-					})(i,this.numRepresentation,end)
+					f1(i,this.numRepresentation,end)
 					,timeStep*(i-start)/frameStep);	
 		}
 	};
