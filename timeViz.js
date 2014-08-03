@@ -350,12 +350,14 @@
 		this.numRepresentation++;
 		this.active = true;
 		
+		var f1 = 	(function(f,g,h){
+						return function(){ that.triggeredByTimer(f,g,h);};
+					});
+		
 		for(var i = start ; i < end ; i+=frameStep)
 		{
 			setTimeout(
-					(function(f,g,h){
-						return function(){ that.triggeredByTimer(f,g,h);};
-					})(i,this.numRepresentation,end)
+					f1(i,this.numRepresentation,end)
 					,timeStep*(i-start)/frameStep);	
 		}
 	};
