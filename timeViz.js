@@ -243,6 +243,7 @@
 	
 	time2DVisualisation.prototype.createRepresentation = function(time){
 		var that = this;
+		
 		//Redraw Scale depending on the scaling period
 		this.initColorAndScale();
 		
@@ -251,7 +252,10 @@
 		
 		var vInterpolator = [];
 		var dataUsed = [];
-		var row = 0, offset = 0;
+		var c = [];
+		var v = [];
+		var row = 0, offset = 0, k = 0;
+		var clr, dataGradient = [];
 		
 		for(var j = 0 ; j < this.xOffset.length*(this.yOffset.length-1); j++){
 			row = parseInt(j/this.xOffset.length);
@@ -262,10 +266,6 @@
 		}
 		
 		this.currentDate = that.valueArrayAccessor(that.data[0])[time].date;
-		
-		var c = [];
-		var v = [];
-		var k;
 		
 		row = 0;
 		for(var i = 0 ; i < this.dimension.y ; i+=taillePas){
@@ -279,8 +279,8 @@
 				c[j] = this.color(v[j]);
 			}
 			
-			var dataGradient = new Array();
-			var clr = this.xOffset.length;
+			dataGradient = [];
+			clr = this.xOffset.length;
 			for(var j = 0 ; j < clr ; j++){
 				dataGradient[j] = {offset: parseInt(this.xOffset[j]) + "%", color: c[j]};
 			}
@@ -350,9 +350,9 @@
 		this.numRepresentation++;
 		this.active = true;
 		
-		var f1 = 	(function(f,g,h){
-						return function(){ that.triggeredByTimer(f,g,h);};
-					});
+		var f1 = (function(f,g,h){
+					return function(){ that.triggeredByTimer(f,g,h);};
+				});
 		
 		for(var i = start ; i < end ; i+=frameStep)
 		{
