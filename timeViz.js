@@ -42,7 +42,6 @@
 	*/
 		
 	time2DVisualisation = function (args){
-		var that = this;
 		this.data = new Array();
 		
 		this.container = d3.select(args.container);
@@ -76,10 +75,6 @@
 		this.numRepresentation = 0;
 		this.frame = this.repStart;
 		this.active = false;
-		
-		if(this.xOffset.length*this.yOffset.length != this.data.length){
-			throw "Incorrect numbers in data or offsets : xOffset.length*yOffset.length = data.length";
-		}
 		
 		//Remove and create new SVG
 		this.container.select("svg").remove();
@@ -185,13 +180,13 @@
 		//Define range and color range
 		this.min = parseFloat(extent[0]);
 		this.max = parseFloat(extent[1]);
-		var domainColor = new Array();
+		var domainColor = [];
 		var crl1 = this.colorScale.length;
 		for(var j = 0 ; j < crl1 ; j++){
 			domainColor[j] = parseFloat(this.min + j*(this.max-this.min)/(crl1-1));
 		}
 		
-		col = this.color = d3.scale.linear()
+		this.color = d3.scale.linear()
 			.domain(domainColor)
 			.range(this.colorScale);
 				
@@ -254,8 +249,8 @@
 		this.container.selectAll(".group").remove();	
 		var gr = this.svg.append("g").attr("index",time).attr("class","group");
 		
-		var vInterpolator = new Array;
-		var dataUsed = new Array();
+		var vInterpolator = [];
+		var dataUsed = []
 		var row = 0, offset = 0;
 		
 		for(var j = 0 ; j < this.xOffset.length*(this.yOffset.length-1); j++){
@@ -266,12 +261,10 @@
 			vInterpolator[j] = d3.interpolate(dataUsed[0],dataUsed[1]);
 		}
 		
-		var minT = formatValue(d3.min(this.data, function(c) { return that.valueAccessor(that.valueArrayAccessor(c)[time]); }));
-		var maxT = formatValue(d3.max(this.data, function(c) { return that.valueAccessor(that.valueArrayAccessor(c)[time]); }));
 		this.currentDate = that.valueArrayAccessor(that.data[0])[time].date;
 		
-		var c = new Array();
-		var v = new Array();
+		var c = [];
+		var v = [];
 		var k;
 		
 		row = 0;
