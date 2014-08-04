@@ -39,8 +39,8 @@
       .attr("id", "svg_container")
       .attr("transform", "translate(" + this.width / 2 + "," + this.height / 2 + ")");
     
-	var marginTop = parseInt(window.getComputedStyle(this.container[0][0]).marginTop); 
-	var marginLeft = parseInt(window.getComputedStyle(this.container[0][0]).marginLeft);
+  	var marginTop = parseInt(window.getComputedStyle(this.container[0][0]).marginTop,10); 
+	  var marginLeft = parseInt(window.getComputedStyle(this.container[0][0]).marginLeft,10);
     exp.style("visibility", "hidden").style("position","absolute").style("top",(0.52*this.height + marginTop) + "px").style("left",(0.42*this.width + marginLeft) + "px").style("text-align","center").style("color","#666").style("width",0.19*this.width + "px");  
 	  
     this.partition = d3.layout.partition()

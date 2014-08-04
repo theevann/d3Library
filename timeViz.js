@@ -1,7 +1,7 @@
 /**
  * @author Evann Courdier
  *
- *  time2DVisualisation.js
+ * time2DVisualisation.js
  * CREATED ON 31/07/2014
  * To be used to create graphical time visualisation interpolating data from point creating a rectangle
  * 
@@ -65,7 +65,7 @@
 			
 		this.width = parseFloat(this.container.style("width"))*0.95;
 		this.height = parseFloat(this.container.style("height"))*0.99;
-		this.dimension = {x : parseInt(0.9*this.width), y : parseInt(0.95*this.height)};
+		this.dimension = {x : parseInt(0.9*this.width,10), y : parseInt(0.95*this.height,10)};
 		
 		this.dataStart = 0;
 		this.dataEnd = this.data[0].length;
@@ -101,13 +101,13 @@
 	};
 	
 	time2DVisualisation.prototype.setSpeed = function(speed){
-		this.speed = parseInt(speed);
+		this.speed = parseInt(speed,10);
 		if(this.active)
 			createTimeRepresentation(this.frame,this.repEnd,this.step,this.speed);
 	};
 	
 	time2DVisualisation.prototype.setStep = function(step){
-		this.step = parseInt(step);
+		this.step = parseInt(step,10);
 		if(this.active)
 			createTimeRepresentation(this.frame,this.repEnd,this.step,this.speed);
 	};
@@ -124,15 +124,15 @@
 			extentValue[1] = d3.max(this.data, function(c) { return d3.max(that.valueArrayAccessor(c), function(d) { return that.valueAccessor(d); }); });
 			return extentValue;
 		}
-		else if((frameTime - this.dataStart) < parseInt(this.scalingPeriod/2)){
+		else if((frameTime - this.dataStart) < parseInt(this.scalingPeriod/2,10)){
 			extentTime[1] = this.dataStart + this.scalingPeriod;
 		}
-		else if((this.dataEnd - frameTime) < parseInt(this.scalingPeriod/2)){
+		else if((this.dataEnd - frameTime) < parseInt(this.scalingPeriod/2,10)){
 			extentTime[0] = this.dataEnd - this.scalingPeriod;
 		}
 		else{
-			 extentTime[0] = frameTime-parseInt(this.scalingPeriod/2);
-			 extentTime[1] = frameTime+parseInt(this.scalingPeriod/2);
+			 extentTime[0] = frameTime-parseInt(this.scalingPeriod/2,10);
+			 extentTime[1] = frameTime+parseInt(this.scalingPeriod/2,10);
 		}
 		
 		extentValue[0] = d3.min(this.data, function(d) {
@@ -200,7 +200,7 @@
 		var dataGradient = new Array();
 		var crl2 = this.color.range().length;
 		for(var j = 0 ; j < crl2 ; j++){
-			dataGradient[j] = {offset: parseInt(j*100/(crl2-1)) + "%", color: this.color.range()[j]};
+			dataGradient[j] = {offset: parseInt(j*100/(crl2-1),10) + "%", color: this.color.range()[j]};
 		}
 		
 		this.svg.append("linearGradient")                
@@ -213,7 +213,7 @@
 			.attr("offset", function(d) { return d.offset; })   
 			.attr("stop-color", function(d) { return d.color; });
 		
-		var heightScale = parseInt(this.dimension.y);
+		var heightScale = parseInt(this.dimension.y,10);
 		
 		var scaleAxis = d3.svg.axis()
 			.ticks(5)
@@ -222,11 +222,11 @@
 		
 		var scale = this.svg.append("g")
 		  .attr("id", "scale")
-		  .attr("transform", "translate(" + parseInt(10+0.95*this.width) + ",10)")
+		  .attr("transform", "translate(" + parseInt(10+0.95*this.width,10) + ",10)")
 		  .call(scaleAxis);
 		
 		scale.append("rect")
-			.attr("width", parseInt(0.05*this.width))
+			.attr("width", parseInt(0.05*this.width,10))
 			.attr("height", heightScale)
 			.attr("fill", "url(#scale-gradient)");  
 		
@@ -258,7 +258,7 @@
 		var clr, dataGradient = [];
 		
 		for(var j = 0 ; j < this.xOffset.length*(this.yOffset.length-1); j++){
-			row = parseInt(j/this.xOffset.length);
+			row = parseInt(j/this.xOffset.length,10);
 			offset = j%this.xOffset.length;
 			dataUsed[0] = that.valueAccessor(that.valueArrayAccessor(that.data[offset+that.xOffset.length*row])[time]);
 			dataUsed[1] = that.valueAccessor(that.valueArrayAccessor(that.data[offset+that.xOffset.length*(row+1)])[time]);
@@ -282,7 +282,7 @@
 			dataGradient = [];
 			clr = this.xOffset.length;
 			for(var j = 0 ; j < clr ; j++){
-				dataGradient[j] = {offset: parseInt(this.xOffset[j]) + "%", color: c[j]};
+				dataGradient[j] = {offset: parseInt(this.xOffset[j],10) + "%", color: c[j]};
 			}
 			
 			gr.append("linearGradient")                
@@ -308,7 +308,7 @@
 		
 		for(var j = 0 ; j < this.yOffset.length*this.xOffset.length ; j++)
 		{
-			row = parseInt(j/this.xOffset.length);
+			row = parseInt(j/this.xOffset.length,10);
 			offset = j%this.xOffset.length;
 			
 			gr.append("line")
@@ -333,7 +333,6 @@
 	// Auxiliary function to stop time representation
 	
 	time2DVisualisation.prototype.triggeredByTimer = function(time, num, end){
-		var that = this;
 		if(this.numRepresentation == num && this.active == true){
 			this.frame = time;
 			this.createRepresentation(time);
