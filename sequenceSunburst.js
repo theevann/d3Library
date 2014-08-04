@@ -38,9 +38,12 @@
       .append("svg:g")
       .attr("id", "svg_container")
       .attr("transform", "translate(" + this.width / 2 + "," + this.height / 2 + ")");
-      
-    exp.style("visibility", "hidden").style("position","absolute").style("top",0.43*this.height + "px").style("left",0.4*this.width + "px").style("text-align","center").style("color","#666").style("width",0.19*this.width + "px");
-      
+    
+	var marginTop = parseInt(window.getComputedStyle(this.container[0][0]).marginTop); 
+	var marginLeft = parseInt(window.getComputedStyle(this.container[0][0]).marginLeft);
+    exp.style("visibility", "hidden").style("position","absolute").style("top",(0.52*this.height + marginTop) + "px").style("left",(0.42*this.width + marginLeft) + "px").style("text-align","center").style("color","#666").style("width",0.19*this.width + "px");
+    this.container.select("#chart").style("position","relative").selectAll("path").style("stroke","#fff");
+	  
     this.partition = d3.layout.partition()
       .size([2 * Math.PI, this.radius * this.radius]);
     this.useSize?this.partition.value(function(d) { return d.size; }):this.partition.value(function(d) { return 1; });
@@ -50,15 +53,6 @@
       font-weight: 600;
       fill: #fff;
     }
-    
-    #chart {
-      position: relative;
-    }
-    
-    #chart path {
-      stroke: #fff;
-    }
-    
     */
   };
   
@@ -83,7 +77,7 @@
   
     var path = this.chart.data([this.data]).selectAll("path")
         .data(nodes)
-        .enter().append("svg:path")
+        .enter().append("svg:path").style("stroke","#fff")
         .attr("display", function(d) { return d.depth ? null : "none"; })
         .attr("d", arc)
         .attr("fill-rule", "evenodd")
