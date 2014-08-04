@@ -28,7 +28,6 @@
     //Creating div containers ...
     this.container.append("div").attr("id","sequence");
     var exp = this.container.append("div").attr("id","chart").append("div").attr("id","explanation");
-    exp.style("visibility", "hidden").style("position","absolute").style("top",0.43*this.height + "px").style("left",0.4*this.width + "px").style("text-align","center").style("color","#666").style("width",0.19*this.width + "px");
     exp.append("span").attr("id","percentage").style("font-size","2.5em");
     exp.append("br");
     exp.append("span").attr("id","percentageText");
@@ -39,6 +38,8 @@
       .append("svg:g")
       .attr("id", "svg_container")
       .attr("transform", "translate(" + this.width / 2 + "," + this.height / 2 + ")");
+      
+    exp.style("visibility", "hidden").style("position","absolute").style("top",0.43*this.height + "px").style("left",0.4*this.width + "px").style("text-align","center").style("color","#666").style("width",0.19*this.width + "px");
       
     this.partition = d3.layout.partition()
       .size([2 * Math.PI, this.radius * this.radius]);
