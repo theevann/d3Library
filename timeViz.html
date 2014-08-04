@@ -29,35 +29,41 @@
     </footer>
   </div>
   	<script>
-  	var myData = new Array();
-  	var getFile = function(file) {
-	    d3.json("http://wikisensing.org/WikiSensingServiceAPI/DCESensorDeployment2f7M76vkKdRlvm7vVWg/Node_" + (file + 1), function (error, json) {
-	        if (error) {
-	            return console.warn("Merde : " + error);
-	        }
-	        myData[file] = json;
-	        
-	        if (file == 14) {				
-				 var myArgs = {
-				    container : document.getElementById("chart"),
-					xOffset : [0,25,50,75,100],
-					yOffset : [0,50,100],
-					speed: 500,
-					valueArrayAccessor: function(d){return d.sensorRecords;},
-					valueAccessor: function(d){return d.sensorObject[10].value;},
-					scalingPeriod: 1,
-					color: ["blue", "#27f600", "yellow","orange","red"],
-					data : myData
-				};
-				  
-				  myTest = new time2DVisualisation(myArgs);
-				  myTest.play();
-	        } else if (file < 14){
-	            getFile(file + 1);
-			}
-	    });
-	};
+  	var myData=[];
+  	var getFile=function(file) {
+  		d3.json("http://wikisensing.org/WikiSensingServiceAPI/DCESensorDeployment2f7M76vkKdRlvm7vVWg/Node_" +(file + 1), function(error, json) {
+  			if(error) {
+  				return console.warn(error);
+  			}
+  			myData[file]=json;
+  			if(file==14) {
+  				var myArgs= {
+  					container : document.getElementById("chart"),
+  					xOffset :[0, 25, 50, 75, 100],
+  					yOffset :[0, 50, 100],
+  					speed: 500,
+  					valueArrayAccessor: function(d) {
+  						return d.sensorRecords;
+  					},
+  					valueAccessor: function(d) {
+  						return d.sensorObject[10].value;
+  					},
+  					scalingPeriod: 1,
+  					color:["blue", "#27f600", "yellow", "orange", "red"],
+  					data : myData
+  				}
+  				;
+  				myTest=new time2DVisualisation(myArgs);
+  				myTest.play();
+  			}
+  			else if(file < 14) {
+  				getFile(file + 1);
+  			}
+  		}
+  		);
+  	};
   	getFile(0);
+  	
   	
   	/*
   	data: [
