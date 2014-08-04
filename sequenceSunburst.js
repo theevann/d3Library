@@ -47,7 +47,7 @@
   
   // Main function to draw and set up the visualization, once we have the data.
   sequenceSunburst.prototype.createVisualization = function(){
-  
+    var that = this;
     // Basic setup of page elements.
     if(this.activeBreadcrumb)
       this.initializeBreadcrumbTrail();
@@ -72,10 +72,10 @@
         .attr("fill-rule", "evenodd")
         .style("fill", function(d) { return colors(d.name); })
         .style("opacity", 1)
-        .on("mouseover", this.mouseover);
+        .on("mouseover", function(d){that.mouseover.call(that,d)});
   
     // Add the mouseleave handler to the bounding circle.
-    this.container.select("#svg_container").on("mouseleave", this.mouseleave);
+    this.container.select("#svg_container").on("mouseleave", function(d){that.mouseleave.call(that,d)});
   
     // Get total size of the tree = value of root node from partition.
     this.totalSize = path.node().__data__.value;
@@ -92,7 +92,10 @@
   
     this.container.select("#percentage")
         .text(percentageString);
-  
+        
+  this.container.select("#percentageText")
+        .text(this.explanationText);
+        
     this.container.select("#explanation")
         .style("visibility", "");
   
@@ -106,7 +109,7 @@
         .style("opacity", 0.3);
   
     // Then highlight only those that are an ancestor of the current segment.
-    this.chartselectAll("path")
+    this.chart.selectAll("path")
         .filter(function(node) {
                   return (sequenceArray.indexOf(node) >= 0);
                 })
@@ -122,7 +125,8 @@
         .style("visibility", "hidden");
   
     // Deactivate all segments during transition.
-   this.container.selectAll("path").on("mouseover", null);
+   var mouseoverFunction = this.container.selectAll("path").on("mouseover");
+  this.container.selectAll("path").on("mouseover", null);
   
     // Transition each segment to full opacity and then reactivate it.
    this.container.selectAll("path")
@@ -130,7 +134,7 @@
         .duration(500)
         .style("opacity", 1)
         .each("end", function() {
-                d3.select(this).on("mouseover", this.mouseover);
+                d3.select(this).on("mouseover", mouseoverFunction);
               });
   
    this.container.select("#explanation")
