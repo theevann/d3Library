@@ -8,5 +8,8 @@ new*
 #Cloud9
 .c9
 
+#Eclipse
+*.project
+
 #Others
 wikiMap
