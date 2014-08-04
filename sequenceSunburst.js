@@ -19,8 +19,8 @@
     this.explanationText = args.explanationText || "";
     this.useSize = args.useSize || true;
     
-    this.width = this.container.style("width");
-    this.height = this.container.style("height");
+    this.width = parseFloat(this.container.style("width"));
+    this.height = parseFloat(this.container.style("height"));
     this.radius = Math.min(this.width, this.height) / 2;
     
     this.totalSize = 0;
