@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+    
+    <head>
+        <title>Test file : Sequence Sunburst</title>
+        <script src="http://d3js.org/d3.v3.min.js"></script>
+        <script type="text/javascript" src="sequenceSunburst.js"></script>
+    </head>
+    
+    <body>
+        <div id="main"></div>
+        <script type="text/javascript">
+            var myData = {
+                name : "Residence 1" 
+                children : [
+                {
+                    name : "Famille 1",
+                    children:{
+                        {name:"Evann",size:"22"},
+                        {name:"Satchel",size:"20"},
+                        {name:"Margaux",size:"13"}
+                    }
+                },
+                {
+                    name : "Famille 2",
+                    children:{
+                        {name:"Justine",size:"21"},
+                        {name:"Swann",size:"30"}
+                    }
+                }
+                ]
+            }
+        
+            var myArgs = {
+                container: document.getElementById("main"),
+                data : myData
+            };
+            var mySequenceSunburst = new sequenceSunburst(myArgs);
+            mySequenceSunburst.createVisualization();
+        </script>
+    </body>
+
+</html>
