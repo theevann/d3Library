@@ -8,7 +8,7 @@
     </head>
     
     <body>
-        <div id="main"></div>
+        <div id="main" style="width:50%;margin:auto;height:500px"></div>
         <script type="text/javascript">
             var myData = {
                 name : "Residence 1",
@@ -16,16 +16,16 @@
                 {
                     name : "Famille 1",
                     children:[
-                        {name:"Evann",size:"22"},
-                        {name:"Satchel",size:"20"},
-                        {name:"Margaux",size:"13"}
+                        {name:"Evann",size:22},
+                        {name:"Satchel",size:20},
+                        {name:"Margaux",size:13}
                     ]
                 },
                 {
                     name : "Famille 2",
                     children:[
-                        {name:"Justine",size:"21"},
-                        {name:"Swann",size:"30"}
+                        {name:"Justine",size:21},
+                        {name:"Swann",size:30}
                     ]
                 }
                 ]
@@ -33,7 +33,8 @@
         
             var myArgs = {
                 container: document.getElementById("main"),
-                data : myData
+                data : myData,
+				explanationText: "en age de la famille"
             };
             var mySequenceSunburst = new sequenceSunburst(myArgs);
             mySequenceSunburst.createVisualization();
