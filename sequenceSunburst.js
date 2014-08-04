@@ -24,7 +24,7 @@
     this.radius = Math.min(this.width, this.height) / 2;
     
     this.totalSize = 0;
-    
+	
     //Creating div containers ...
     this.container.append("div").attr("id","sequence");
     var exp = this.container.append("div").attr("id","chart").append("div").attr("id","explanation");
@@ -41,19 +41,11 @@
     
 	var marginTop = parseInt(window.getComputedStyle(this.container[0][0]).marginTop); 
 	var marginLeft = parseInt(window.getComputedStyle(this.container[0][0]).marginLeft);
-    exp.style("visibility", "hidden").style("position","absolute").style("top",(0.52*this.height + marginTop) + "px").style("left",(0.42*this.width + marginLeft) + "px").style("text-align","center").style("color","#666").style("width",0.19*this.width + "px");
-    this.container.select("#chart").style("position","relative").selectAll("path").style("stroke","#fff");
+    exp.style("visibility", "hidden").style("position","absolute").style("top",(0.52*this.height + marginTop) + "px").style("left",(0.42*this.width + marginLeft) + "px").style("text-align","center").style("color","#666").style("width",0.19*this.width + "px");  
 	  
     this.partition = d3.layout.partition()
       .size([2 * Math.PI, this.radius * this.radius]);
     this.useSize?this.partition.value(function(d) { return d.size; }):this.partition.value(function(d) { return 1; });
-
-    /*
-    #sequence text, #legend text {
-      font-weight: 600;
-      fill: #fff;
-    }
-    */
   };
   
   // Main function to draw and set up the visualization, once we have the data.
@@ -93,8 +85,7 @@
    };
   
   // Fade all but the current sequence, and show it in the breadcrumb trail.
-  sequenceSunburst.prototype.mouseover = function(d) {
-
+  sequenceSunburst.prototype.mouseover = function(d) {		
     var percentage = (100 * d.value / this.totalSize).toPrecision(3);
     var percentageString = percentage + "%";
     if (percentage < 0.1) {
@@ -117,6 +108,8 @@
   
     // Fade all the segments.
     this.container.selectAll("path")
+		.transition()
+		.duration(10)
         .style("opacity", 0.3);
   
     // Then highlight only those that are an ancestor of the current segment.
@@ -124,29 +117,23 @@
         .filter(function(node) {
                   return (sequenceArray.indexOf(node) >= 0);
                 })
+		.transition()
+		.duration(10)
         .style("opacity", 1);
   };
   
   // Restore everything to full opacity when moving off the visualization.
- sequenceSunburst.prototype.mouseleave = function(d) {
-  
+ sequenceSunburst.prototype.mouseleave = function(d) {	
     // Hide the breadcrumb trail
     if(this.activeBreadcrumb)
       this.container.select("#trail")
         .style("visibility", "hidden");
-  
-    // Deactivate all segments during transition.
-   var mouseoverFunction = this.container.selectAll("path").on("mouseover");
-  this.container.selectAll("path").on("mouseover", null);
-  
+		
     // Transition each segment to full opacity and then reactivate it.
    this.container.selectAll("path")
         .transition()
         .duration(500)
-        .style("opacity", 1)
-        .each("end", function() {
-                d3.select(this).on("mouseover", mouseoverFunction);
-              });
+        .style("opacity", 1);
   
    this.container.select("#explanation")
         .style("visibility", "hidden");
@@ -215,6 +202,8 @@
         .attr("dy", "0.35em")
         .attr("text-anchor", "middle")
         .text(function(d) { return d.name; });
+	
+	this.container.selectAll("#sequence text").style("font-weight","600").style("fill","#fff");
   
     // Set position for entering and updating nodes.
     g.attr("transform", function(d, i) {
@@ -230,7 +219,9 @@
         .attr("y", b.h / 2)
         .attr("dy", "0.35em")
         .attr("text-anchor", "middle")
-        .text(percentageString);
+        .text(percentageString)
+		.style("fill","#000");
+  
   
     // Make the breadcrumb trail visible, if it's hidden.
     this.container.select("#trail")
