@@ -27,8 +27,9 @@
     
     //Creating div containers ...
     this.container.append("div").attr("id","sequence");
-    var exp = this.container.append("div").attr("id","chart").append("div").attr("id","explanation").style("visibility", "hidden");
-    exp.append("span").attr("id","percentage");
+    var exp = this.container.append("div").attr("id","chart").append("div").attr("id","explanation");
+    exp.style("visibility", "hidden").style("position","absolute").style("top",0.43*this.height).style("left",0.4*this.width).style("text-align","center").style("color","#666").style("width",0.19*this.width);
+    exp.append("span").attr("id","percentage").style("font-size","2.5em");
     exp.append("br");
     exp.append("span").attr("id","percentageText");
     
@@ -42,7 +43,22 @@
     this.partition = d3.layout.partition()
       .size([2 * Math.PI, this.radius * this.radius]);
     this.useSize?this.partition.value(function(d) { return d.size; }):this.partition.value(function(d) { return 1; });
-      
+
+    /*
+    #sequence text, #legend text {
+      font-weight: 600;
+      fill: #fff;
+    }
+    
+    #chart {
+      position: relative;
+    }
+    
+    #chart path {
+      stroke: #fff;
+    }
+    
+    */
   };
   
   // Main function to draw and set up the visualization, once we have the data.
