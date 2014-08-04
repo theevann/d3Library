@@ -13,7 +13,7 @@
       .outerRadius(function(d) { return Math.sqrt(d.y + d.dy); });
     
   sequenceSunburst = function (args){
-    this.container = args.container;
+    this.container = d3.select(args.container);
     this.data = args.data;
     this.activeBreadcrumb = args.activeBreadcrumb || true;
     this.explanationText = args.explanationText || "";
@@ -27,10 +27,10 @@
     
     //Creating div containers ...
     this.container.append("div").attr("id","sequence");
-    var ex = this.container.append("div").attr("id","sequence").append("div").attr("id","explanation").style("visibility", "hidden");
-    ex.append("span").attr("id","percentage");
-    ex.append("br");
-    ex.append("span").attr("id","percentageText");
+    var exp = this.container.append("div").attr("id","sequence").append("div").attr("id","explanation").style("visibility", "hidden");
+    exp.append("span").attr("id","percentage");
+    exp.append("br");
+    exp.append("span").attr("id","percentageText");
     
     this.chart = this.container.select("#chart").append("svg:svg")
       .attr("width", this.width)
@@ -127,7 +127,7 @@
     // Transition each segment to full opacity and then reactivate it.
    this.container.selectAll("path")
         .transition()
-        .duration(1000)
+        .duration(500)
         .style("opacity", 1)
         .each("end", function() {
                 d3.select(this).on("mouseover", this.mouseover);
