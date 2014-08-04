@@ -27,7 +27,7 @@
     
     //Creating div containers ...
     this.container.append("div").attr("id","sequence");
-    var exp = this.container.append("div").attr("id","sequence").append("div").attr("id","explanation").style("visibility", "hidden");
+    var exp = this.container.append("div").attr("id","chart").append("div").attr("id","explanation").style("visibility", "hidden");
     exp.append("span").attr("id","percentage");
     exp.append("br");
     exp.append("span").attr("id","percentageText");
