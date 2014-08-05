@@ -6,6 +6,12 @@
   
   // Mapping of step names to colors.
   var colors = d3.scale.category20c();
+  
+  var luminance = d3.scale.sqrt()
+    .domain([0, 10000])
+    .clamp(true)
+    .range([90, 20]);
+  
   var arc = d3.svg.arc()
       .startAngle(function(d) { return d.x; })
       .endAngle(function(d) { return d.x + d.dx; })
@@ -73,7 +79,7 @@
         .attr("display", function(d) { return d.depth ? null : "none"; })
         .attr("d", arc)
         .attr("fill-rule", "evenodd")
-        .style("fill", function(d) { return colors(d.name); })
+        .style("fill", function(d) { return that.fill(d); })
         .style("opacity", 1)
         .on("mouseover", function(d){that.mouseover.call(that,d)});
   
@@ -151,6 +157,14 @@
     return path;
   };
   
+  
+  sequenceSunburst.prototype.fill = function(d) {
+    var p = d;
+    while (p.depth > 1) p = p.parent;
+    var c = d3.lab(colors(p.name));
+    c.l = luminance(d.sum);
+    return c;
+  }
   
   //-----------------------------------------------
   //What follows is only linked with the BREADCRUMB
