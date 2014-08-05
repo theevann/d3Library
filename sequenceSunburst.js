@@ -5,10 +5,9 @@
   };
   
   // Mapping of step names to colors.
-  var colors = d3.scale.category20c();
+  var colors = d3.scale.category10();
   
   var luminance = d3.scale.sqrt()
-    .domain([0, 10000])
     .clamp(true)
     .range([90, 20]);
   
@@ -72,6 +71,8 @@
         .filter(function(d) {
         return (d.dx > 0.005); // 0.005 radians = 0.29 degrees
         });
+  
+	luminance.domain([0,nodes[0].value]);
   
     var path = this.chart.data([this.data]).selectAll("path")
         .data(nodes)
@@ -162,7 +163,7 @@
     var p = d;
     while (p.depth > 1) p = p.parent;
     var c = d3.lab(colors(p.name));
-    c.l = luminance(d.sum);
+    c.l = luminance(d.value);
     return c;
   }
   
@@ -197,7 +198,7 @@
   
   // Update the breadcrumb trail to show the current sequence and percentage.
   sequenceSunburst.prototype.updateBreadcrumbs = function(nodeArray, percentageString) {
-  
+	var that = this
     // Data join; key function combines name and depth (= position in sequence).
     var g = this.container.select("#trail")
         .selectAll("g")
@@ -208,7 +209,7 @@
   
     entering.append("svg:polygon")
         .attr("points", this.breadcrumbPoints)
-        .style("fill", function(d) { return colors(d.name); });
+        .style("fill", function(d) { return that.fill(d); });
   
     entering.append("svg:text")
         .attr("x", (b.w + b.t) / 2)
