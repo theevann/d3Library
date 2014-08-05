@@ -20,9 +20,10 @@
   sequenceSunburst = function (args){
     this.container = d3.select(args.container);
     this.data = args.data;
-    this.activeBreadcrumb = args.activeBreadcrumb || true;
-    this.explanationText = args.explanationText || "";
-    this.useSize = args.useSize || true;
+    this.activeBreadcrumb = !(args.desactiveBreadcrumb || false);
+	this.showPercentage = !(args.hidePercentage || false);
+    this.explanationText = args.explanationText || "from " + this.data.name;
+    this.useSize = !(args.notUseSize || false);
     
     this.width = parseFloat(this.container.style("width"));
     this.height = parseFloat(this.container.style("height"));
@@ -32,10 +33,10 @@
 	
     //Creating div containers ...
     this.container.append("div").attr("id","sequence");
-    var exp = this.container.append("div").attr("id","chart").append("div").attr("id","explanation");
-    exp.append("span").attr("id","percentage").style("font-size","2.5em");
+    var exp = this.container.append("div").attr("id","chart").style("position","relative").append("div").attr("id","explanation");
+    exp.append("span").attr("id","percentage").style("font-size","2.5em").text(" ");
     exp.append("br");
-    exp.append("span").attr("id","percentageText");
+    exp.append("span").attr("id","percentageText").text(" ");
     
     this.chart = this.container.select("#chart").append("svg:svg")
       .attr("width", this.width)
@@ -44,9 +45,7 @@
       .attr("id", "svg_container")
       .attr("transform", "translate(" + this.width / 2 + "," + this.height / 2 + ")");
     
-  	var marginTop = parseInt(window.getComputedStyle(this.container[0][0]).marginTop,10); 
-	  var marginLeft = parseInt(window.getComputedStyle(this.container[0][0]).marginLeft,10);
-    exp.style("visibility", "hidden").style("position","absolute").style("top",(0.52*this.height + marginTop) + "px").style("left",(0.42*this.width + marginLeft) + "px").style("text-align","center").style("color","#666").style("width",0.19*this.width + "px");  
+    exp.style("visibility", "hidden").style("position","absolute").style("top",(0.5*(this.height)-parseFloat(exp.style("height"))/2) + "px").style("left",(0.41*this.width) + "px").style("text-align","center").style("color","#666").style("width",0.19*this.width + "px");  
 	  
     this.partition = d3.layout.partition()
       .size([2 * Math.PI, this.radius * this.radius]);
@@ -59,12 +58,6 @@
     // Basic setup of page elements.
     if(this.activeBreadcrumb)
       this.initializeBreadcrumbTrail();
-  
-    // Bounding circle underneath the sunburst, to make it easier to detect
-    // when the mouse leaves the parent g.
-    this.chart.append("svg:circle")
-        .attr("r", this.radius)
-        .style("opacity", 0);
   
     // For efficiency, filter nodes to keep only those large enough to see.
     var nodes = this.partition.nodes(this.data)
@@ -102,11 +95,11 @@
     this.container.select("#percentage")
         .text(percentageString);
         
-  this.container.select("#percentageText")
+	this.container.select("#percentageText")
         .text(this.explanationText);
         
     this.container.select("#explanation")
-        .style("visibility", "");
+        .style("visibility", this.showPercentage ? "" : "hidden");
   
     var sequenceArray = this.getAncestors(d);
     
@@ -182,13 +175,18 @@
       .style("fill", "#000");
   };
   
-  // Generate a string that describes the points of a breadcrumb polygon.
+ // Generate a string that describes the points of a breadcrumb polygon.
   sequenceSunburst.prototype.breadcrumbPoints = function(d, i) {
+	var canvas = document.createElement('canvas');
+	var ctx = canvas.getContext("2d");
+	ctx.font = "16px 'Times New Roman'";
+	var w = ctx.measureText(d.name).width+20;
+  
     var points = [];
     points.push("0,0");
-    points.push(b.w + ",0");
-    points.push(b.w + b.t + "," + (b.h / 2));
-    points.push(b.w + "," + b.h);
+    points.push(w + ",0");
+    points.push(w + b.t + "," + (b.h / 2));
+    points.push(w + "," + b.h);
     points.push("0," + b.h);
     if (i > 0) { // Leftmost breadcrumb; don't include 6th vertex.
       points.push(b.t + "," + (b.h / 2));
@@ -198,11 +196,16 @@
   
   // Update the breadcrumb trail to show the current sequence and percentage.
   sequenceSunburst.prototype.updateBreadcrumbs = function(nodeArray, percentageString) {
-	var that = this
+	var that = this;
+	var translate = 0;
+	var canvas = document.createElement('canvas');
+	var ctx = canvas.getContext("2d");
+	ctx.font = "16px 'Times New Roman'";
+	
     // Data join; key function combines name and depth (= position in sequence).
     var g = this.container.select("#trail")
         .selectAll("g")
-        .data(nodeArray, function(d) { return d.name + d.depth; });
+        .data(nodeArray, function(d,i) { return d.name + i; });
   
     // Add breadcrumb and label for entering nodes.
     var entering = g.enter().append("svg:g");
@@ -212,9 +215,11 @@
         .style("fill", function(d) { return that.fill(d); });
   
     entering.append("svg:text")
-        .attr("x", (b.w + b.t) / 2)
+        .attr("x", function(d,i){ var w = ctx.measureText(d.name).width+20; return(w + b.t) / 2})
         .attr("y", b.h / 2)
         .attr("dy", "0.35em")
+		.style("font-size","16px")
+		.style("font-style","'Times New Roman'")
         .attr("text-anchor", "middle")
         .text(function(d) { return d.name; });
 	
@@ -222,7 +227,9 @@
   
     // Set position for entering and updating nodes.
     g.attr("transform", function(d, i) {
-      return "translate(" + i * (b.w + b.s) + ", 0)";
+		var str = "translate(" + translate + ", 0)"
+		translate += ctx.measureText(d.name).width+20+b.t;
+		return str;
     });
   
     // Remove exiting nodes.
@@ -230,13 +237,12 @@
   
     // Now move and update the percentage at the end.
     this.container.select("#trail").select("#endlabel")
-        .attr("x", (nodeArray.length + 0.5) * (b.w + b.s))
+        .attr("x", translate+30)
         .attr("y", b.h / 2)
         .attr("dy", "0.35em")
         .attr("text-anchor", "middle")
         .text(percentageString)
 		.style("fill","#000");
-  
   
     // Make the breadcrumb trail visible, if it's hidden.
     this.container.select("#trail")

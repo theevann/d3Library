@@ -8,7 +8,7 @@
     </head>
     
     <body>
-        <div id="main" style="width:50%;margin:auto;height:500px"></div>
+        <div id="main" style="width:50%;margin:auto;height:400px"></div>
         <script type="text/javascript">
             var myData = {
                 name : "Residence 1",
@@ -46,6 +46,7 @@
             var myArgs = {
                 container: document.getElementById("main"),
                 data : myData,
+				desactiveBreadcrumb : false,
 				explanationText: "en age de la famille"
             };
             var mySequenceSunburst = new sequenceSunburst(myArgs);
