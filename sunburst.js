@@ -30,10 +30,6 @@
   
      // Mapping of step names to colors.
     var colors = d3.scale.category10();
-      
-    var luminance = d3.scale.sqrt()
-        .clamp(true)
-        .range([90, 20]);
 
 sunburst = function (args){
     var that = this;
@@ -85,15 +81,18 @@ sunburst = function (args){
     
     var nodes = this.partition
         .nodes(this.data); // Compute the nodes
-        
-    luminance.domain([0,nodes[0].value]); // Set luminance bounds
+    
+    this.luminance = d3.scale.sqrt()
+        .clamp(true)
+        .range([90, 20]);
+    this.luminance.domain([0,nodes[0].value]); // Set luminance bounds
     this.totalSize = nodes[0].value; // Set the totalSize of the graph
 
     nodes.forEach(function(d) {
             d._children = d.children;
             d.sum = d.value;
             d.key = key(d);
-            d.fill = fill(d); // USE LUMINANCE !!!
+            d.fill = fill.call(that,d); // USE LUMINANCE !!!
         });
 };
 
@@ -416,7 +415,6 @@ sunburst.prototype.zoom = function(root, p) {
      *  Common Functions not specific to a class
      */   
   
-
     function getAncestors(node) {
         var path = [];
         var current = node;
@@ -437,7 +435,7 @@ sunburst.prototype.zoom = function(root, p) {
         var p = d;
         while (p.depth > 1) p = p.parent;
         var c = d3.lab(colors(p.name));
-        c.l = luminance(d.sum);
+        c.l = this.luminance(d.sum);
         return c;
     }
 
