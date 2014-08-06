@@ -1,4 +1,28 @@
-﻿(function(){
+﻿/** param: 
+	* Object{
+	*	container, // required
+	*	data, // required
+	*	bilevel, // default false
+    *   desactiveBreadcrumb, // default false
+    *   hidePercentage, // default false
+    *   notUseSize, // default false
+    *   explanationText, // default "from " + nameOfRoot
+	* }
+	* 
+	*   Expected input data : 
+	* 
+	* 	{
+	*	    "name": "cluster",
+	*	    "children": [
+	*		    {"name": "Name1", "size": 1},
+	*		    {"name": "Name2", "size": 2},
+	*		    {"name": "NameN", "size": 698}
+	*		]
+	*	}
+	* 
+	*/
+
+(function(){
     // Breadcrumb dimensions: width, height, spacing, width of tip/tail.
     var b = {
         w: 75, h: 30, s: 3, t: 10
@@ -22,13 +46,16 @@ sunburst = function (args){
     this.normalSunburst = !(args.bilevel || false); // Have a normal or bilevel sunBbrst
     this.activeBreadcrumb = !(args.desactiveBreadcrumb || false);
     this.showPercentage = !(args.hidePercentage || false);
-    this.explanationText = args.explanationText || "from " + this.data.name;
     this.useSize = !(args.notUseSize || false);
+    this.explanationText = args.explanationText || "from " + this.data.name;
     
+    //Computed attributes
     this.width = parseFloat(this.container.style("width"));
     this.height = parseFloat(this.container.style("height"));
-    if(this.width == 0 || this.height == 0)
+    if(this.width == 0 || this.height == 0){
         alert("Please give width / height to the container");
+        throw "No dimension set to container";
+    }
     this.radius = Math.min(this.width, this.height) / 2 - 10;
     
     this.totalSize = 0;

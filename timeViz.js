@@ -1,45 +1,45 @@
 /**
  * @author Evann Courdier
  *
- * time2DVisualisation.js
+ * timeViz.js
  * CREATED ON 31/07/2014
  * To be used to create graphical time visualisation interpolating data from point creating a rectangle
  * 
  */
  
+/** param: 
+   * Object{
+   *	container, // required
+   *	xOffset, // required
+   *	yOffset, // required
+   *	data, // required
+   * 	valueAccessor, // default function(d){return d.value;};
+   * 	valueArrayAccessor, // default function(d){return d;};
+   *	dataName,
+   *	scalingPeriod, // default 0 (==> 0 mean for whole period, otherwise scalingPeriod mean the number of frame used to compute the scale at a time t)
+   *	speed, (ms per frame) // default 1000 (==> number of ms per frame)
+   * 	step, // default 1 (==> plot graph for each step of data)
+   *	colorScale, // default ["blue","red"]
+   *	window = [startFrom,endAt],  default whole data
+   * }
+   * 
+   *   Expected default input data : 
+   * 
+   * 	data[
+   * 		[{date,value},{date,value},...],
+   *		[{date,value},{date,value},...],
+   * 		...
+   *		]
+   * 
+   * Note : data must be an array containing the points
+   * You can define the accessor to get the array of records from a point and the accessor to get the value from a record
+   * 
+   */
+ 
 (function(){
 	var formatValue = d3.format(",.2f");
 	var formatDate = function(d) { return formatValue(d) ; };
 	var taillePas = 2; // height of the gradient line => the bigger it is, the less precise it will be ((has to be integer > 0)			
-	
-	/** param: 
-	* Object{
-	*	container, // required
-	*	xOffset, // required
-	*	yOffset, // required
-	*	data, // required
-	* 	valueAccessor, // default function(d){return d.value;};
-	* 	valueArrayAccessor, // default function(d){return d;};
-	*	dataName,
-	*	scalingPeriod, // default 0 (==> 0 mean for whole period, otherwise scalingPeriod mean the number of frame used to compute the scale at a time t)
-	*	speed, (ms per frame) // default 1000 (==> number of ms per frame)
-	* 	step, // default 1 (==> plot graph for each step of data)
-	*	colorScale, // default ["blue","red"]
-	*	window = [startFrom,endAt],  default whole data
-	* }
-	* 
-	*   Expected default input data : 
-	* 
-	* 	data[
-	* 		[{date,value},{date,value},...],
-	*		[{date,value},{date,value},...],
-	* 		...
-	*		]
-	* 
-	* Note : data must be an array containing the points
-	* You can define the accessor to get the array of records from a point and the accessor to get the value from a record
-	* 
-	*/
 		
 	time2DVisualisation = function (args){
 		this.data = new Array();

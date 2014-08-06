@@ -405,11 +405,12 @@
         
             var myArgs = {
                 container: document.getElementById("main"),
-				desactiveBreadcrumb : false,
                 data : myData,
-				notUseSize : true,
-				bilevel : false
-				//explanationText: "de ???"
+                desactiveBreadcrumb : false,
+				notUseSize : false,
+				bilevel : false,
+                hidePercentage : false,
+                explanationText: "from FLARE"
             };
             var mySunburst = new sunburst(myArgs);
             mySunburst.createVisualization();
