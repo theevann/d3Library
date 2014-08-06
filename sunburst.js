@@ -30,10 +30,6 @@
   
      // Mapping of step names to colors.
     var colors = d3.scale.category10();
-      
-    var luminance = d3.scale.sqrt()
-        .clamp(true)
-        .range([90, 20]);
 
     sunburst = function (args){
         var that = this;
@@ -191,7 +187,7 @@
      * Functions triggered when mouse in/out and click
      */   
        
-    
+
     // Fade all but the current sequence, and show it in the breadcrumb trail.
     sunburst.prototype.mouseover = function(d) {
         if (document.documentElement.__transition__) return;
@@ -416,7 +412,6 @@
      *  Common Functions not specific to a class
      */   
   
-
     function getAncestors(node) {
         var path = [];
         var current = node;
@@ -425,7 +420,7 @@
             current = current.parent;
         }
         return path;
-    };
+    }
       
     function key(d) {
         var k = [], p = d;
@@ -437,7 +432,7 @@
         var p = d;
         while (p.depth > 1) p = p.parent;
         var c = d3.lab(colors(p.name));
-        c.l = luminance(d.sum);
+        c.l = this.luminance(d.sum);
         return c;
     }
 
