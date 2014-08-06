@@ -81,15 +81,18 @@
         
         var nodes = that.partition
             .nodes(that.data); // Compute the nodes
-            
-        luminance.domain([0,nodes[0].value]); // Set luminance bounds
+        
+        that.luminance = d3.scale.sqrt()
+            .clamp(true)
+            .range([90, 20]);
+            .domain([0,nodes[0].value]); // Set luminance bounds
         that.totalSize = nodes[0].value; // Set the totalSize of the graph
     
         nodes.forEach(function(d) {
                 d._children = d.children;
                 d.sum = d.value;
                 d.key = key(d);
-                d.fill = fill(d); // USE LUMINANCE !!!
+                d.fill = fill.call(that,d); // USE LUMINANCE !!!
             });
     };
     
