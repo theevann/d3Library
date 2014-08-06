@@ -129,14 +129,17 @@ sunburst.prototype.createBilevelVisualization = function(){
     // Basic setup of page elements.
     if(that.activeBreadcrumb)
         that.initializeBreadcrumbTrail();
-      
+    
     that.center = that.chart.append("circle")
         .attr("r", that.radius / 3)
+        .style("cursor","pointer")
+        .style("pointer-events","all")
+        .style("fill","none")
         .on("click", function(d){that.zoomOut.call(that,d);});
-
+        
     that.center.append("title")
         .text("zoom out");
-    
+        
      // Now redefine the value function to use the previously-computed sum.
     that.partition
         .children(function(d, depth) { return depth < 2 ? d._children : null; })
@@ -149,6 +152,7 @@ sunburst.prototype.createBilevelVisualization = function(){
         .enter().append("path")
         .attr("d", that.arc)
         .style("fill", function(d) { return d.fill; })
+        .style("cursor","pointer")
         .each(function(d) { this._current = updateArc(d); })
         .on("click", function(d){that.zoomIn.call(that,d)})
         .on("mouseover", function(d){that.mouseover.call(that,d);});
@@ -161,13 +165,13 @@ sunburst.prototype.createNormalVisualization = function(){
     // Basic setup of page elements.
     if(that.activeBreadcrumb)
         that.initializeBreadcrumbTrail();
-  
+
     // For efficiency, filter nodes to keep only those large enough to see.
     var dataToDraw = that.partition.nodes(that.data)
         .filter(function(d) {
             return (d.dx > 0.005); // 0.005 radians = 0.29 degrees
         });
-  
+
     var path = that.chart.data([that.data]).selectAll("path")
         .data(dataToDraw)
         .enter().append("svg:path").style("stroke","#fff")
@@ -177,7 +181,7 @@ sunburst.prototype.createNormalVisualization = function(){
         .style("fill", function(d) { return d.fill; })
         .style("opacity", 1)
         .on("mouseover", function(d){that.mouseover.call(that,d)});
-  
+
     // Add the mouseleave handler to the bounding circle.
     that.container.select("#svg_container").on("mouseleave", function(d){that.mouseleave.call(that,d)});
    };
@@ -306,6 +310,7 @@ sunburst.prototype.zoom = function(root, p) {
         that.path.enter().append("path")
             .style("fill-opacity", function(d) { return d.depth === 2 - (root === p) ? 1 : 0; })
             .style("fill", function(d) { return d.fill; })
+            .style("cursor","pointer")
             .on("click", function(d){that.zoomIn.call(that,d)})
             .on("mouseover", function(d){that.mouseover.call(that,d);})
             .each(function(d) { this._current = enterArc(d); });

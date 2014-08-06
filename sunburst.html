@@ -6,17 +6,6 @@
         <script src="http://d3js.org/d3.v3.min.js"></script>
         <script type="text/javascript" src="sunburst.js"></script>
     </head>
-    <style>
-		circle,
-		path {
-		  cursor: pointer;
-		}
-
-		circle {
-		  fill: none;
-		  pointer-events: all;
-		}
-	</style>
     <body>
 	
         <div id="main" style="width:50%;margin:auto;height:600px"></div>
@@ -407,13 +396,16 @@
                 container: document.getElementById("main"),
                 data : myData,
                 desactiveBreadcrumb : false,
-				notUseSize : false,
-				bilevel : false,
+				notUseSize : true,
+				bilevel : true,
                 hidePercentage : false,
                 explanationText: "from FLARE"
             };
+            
             var mySunburst = new sunburst(myArgs);
+            
             mySunburst.createVisualization();
+            
         </script>
     </body>
 
