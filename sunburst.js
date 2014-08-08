@@ -48,7 +48,7 @@
         //Computed attributes
         that.width = parseFloat(that.container.style("width"));
         that.height = parseFloat(that.container.style("height"));
-        if(that.width == 0 || that.height == 0){
+        if(that.width === 0 || that.height === 0){
             alert("Please give width / height to the container");
             throw "No dimension set to container";
         }
@@ -84,7 +84,7 @@
         
         that.luminance = d3.scale.sqrt()
             .clamp(true)
-            .range([90, 20]);
+            .range([90, 20])
             .domain([0,nodes[0].value]); // Set luminance bounds
         that.totalSize = nodes[0].value; // Set the totalSize of the graph
     
