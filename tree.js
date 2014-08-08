@@ -16,6 +16,8 @@ var d3lib = {};
         that.stickToContainer = args.stickToContainer || false;
         that.interactive = !(args.disableInteraction || false);
         that.zooming = !(args.disableZoom || false);
+        that.overlayColor = args.overlayColor || "#EEE";
+
         
         //Computed attributes
         that.width = parseFloat(that.container.style("width"));
@@ -56,6 +58,7 @@ var d3lib = {};
             .attr("width", that.width)
             .attr("height", that.height)
             .attr("class", "overlay")
+            .style("background-color",that.overlayColor)
             .call(that.zoomListener)
             .append("g");
     };
@@ -181,7 +184,7 @@ var d3lib = {};
         nodes.forEach(function(d) {
             d.y = 0;
 
-            if(that.nodeSpacing != 0)
+            if(that.nodeSpacing !== 0)
                 d.y = d.depth * that.nodeSpacing;
             else{
                 for( var j = 0 ; j < d.depth ; j++)
@@ -201,6 +204,7 @@ var d3lib = {};
             .attr("transform", function(d) {
                 return "translate(" + source.y0 + "," + source.x0 + ")";
             })
+            .style("cursor","pointer")
             .on('click', that.interactive?function(d){that.click.call(that,d)}:"");
 
         nodeEnter.append("circle")
@@ -208,7 +212,11 @@ var d3lib = {};
             .attr("r", 0)
             .style("fill", function(d) {
                 return d._children ? "lightsteelblue" : "#fff";
-            });
+            })
+            .style("stroke","steelblue")
+            .style("stroke-width","1.5px");
+
+
 
         nodeEnter.append("text")
             .attr("x", function(d) {
@@ -222,6 +230,8 @@ var d3lib = {};
             .text(function(d) {
                 return d.name;
             })
+            .style("font-size","10px")
+            .style("font-family","sans-serif")
             .style("fill-opacity", 0);
 
         // Update the text to reflect whether node has children or not.
@@ -287,7 +297,10 @@ var d3lib = {};
                     source: o,
                     target: o
                 });
-            });
+            })
+            .style("fill","none")
+            .style("stroke","#ccc")
+            .style("stroke-width","1.5px");
 
         // Transition links to their new position.
         link.transition()
