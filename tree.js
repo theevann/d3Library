@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 var d3lib = {};
 (function() {
     var tree = function (args){
@@ -12,6 +12,7 @@ var d3lib = {};
         that.duration = args.duration || 750;
         that.initScale = args.initScale || 1;
         that.nodeSpacing = args.nodeSpacing || 0;
+        that.initialExpandLevel = args.initialExpandLevel || 0;
         that.stickToContainer = args.stickToContainer || false;
         that.interactive = !(args.disableInteraction || false);
         that.zooming = !(args.disableZoom || false);
@@ -35,7 +36,12 @@ var d3lib = {};
         // === INITIALISING TREE ===
         
         // Call visit function to establish maxLabelLength
-        that.visit(that.data, 0);
+        that.visit(that.data, 0, function(parent,depth) {
+            var that = this;
+            that.totalNodes++;
+            that.maxLabelLength = Math.max(parent.name.length, that.maxLabelLength);
+            that.maxLabelLengths[depth] = (parent.name.length < that.maxLabelLengths[depth])? that.maxLabelLengths[depth] : parent.name.length;
+        });
         
         // Sort the tree initially incase the JSON isn't in a sorted order.
         that.sortTree();
@@ -59,6 +65,7 @@ var d3lib = {};
     
     
     tree.prototype.lastID = 0;
+    tree.prototype.maxDepth = 0;
     tree.prototype.totalNodes = 0;
     tree.prototype.maxLabelLength = 0;
     tree.prototype.maxLabelLengths = [0];
@@ -66,14 +73,21 @@ var d3lib = {};
     
     // === Define public methods ===
     
-    
+    //Function to plot the tree - Public
     tree.prototype.createVisualization = function() {
         var that = this;
         // Layout the tree initially and center on the root node.
         that.update(that.data);
+        if(that.initialExpandLevel >= 0){
+            collapse(that.data);
+            if(that.initialExpandLevel > 0)
+                expand(that.data, that.initialExpandLevel);
+            that.update(that.data);
+        }
         that.centerNode(that.data);
     };
     
+    //Collapse all the nodes - Public
     tree.prototype.collapse = function(){
         var that = this;
         collapse(that.data);
@@ -81,13 +95,62 @@ var d3lib = {};
         that.centerNode(that.data);
     };
     
+    //Expand all the nodes - Public
     tree.prototype.expand = function(){
         var that = this;
+        collapse(that.data);
         expand(that.data);
         that.update(that.data);
         that.centerNode(that.data);
     };
     
+    //Get the ACTUAL maximal depth - Public
+    tree.prototype.getMaxDepth = function() {
+        var that = this;
+        that.maxDepth = 0;
+        that.visit(this.data,0,function(parent,depth){var that = this;that.maxDepth = (depth>that.maxDepth)?depth:that.maxDepth;});
+    };
+    
+    // Function to center node when clicked/dropped so node doesn't get lost when collapsing/moving with large amount of children - Public
+    tree.prototype.centerNode = function(source) {
+        var that = this;
+        var scale = that.zooming?that.zoomListener.scale():that.initScale;
+        var x = -source.y0;
+        var y = -source.x0;
+        x = x * scale + that.width / 2;
+        y = y * scale + that.height / 2;
+        that.container.select('g').transition()
+            .duration(that.duration)
+            .attr("transform", "translate(" + x + "," + y + ")scale(" +  scale + ")");
+        that.zoomListener.translate([x,y]);
+    };
+       
+    // Function to center graph - Public
+    tree.prototype.centerGraph = function() {
+        var that = this;
+        var scale = that.zooming?that.zoomListener.scale():that.initScale;
+        var x = 0;
+        
+        that.getMaxDepth();
+        
+        if(that.nodeSpacing !== 0)
+            x = that.maxDepth * that.nodeSpacing;
+        else{
+            for( var j = 0 ; j < that.maxDepth ; j++)
+                x += (that.maxLabelLengths[j] * 10);
+        }
+        x /= -2;
+        var y = -that.tree_.size()[0] / 2;
+        x = x * scale + that.width / 2;
+        y = y * scale + that.height / 2;
+        that.container.select('g').transition()
+            .duration(that.duration)
+            .attr("transform", "translate(" + x + "," + y + ")scale(" +  scale + ")");
+        that.zoomListener.translate([x,y]);
+    };
+    
+    
+    //MAIN FUNCTION
     tree.prototype.update = function(source) {
         var that = this;
         // Compute the new height, function counts total children of root node and sets tree height accordingly.
@@ -254,22 +317,17 @@ var d3lib = {};
     };
     
     // A recursive helper function for establishing maxLabelLength/maxLabelLengths
-    tree.prototype.visit = function(parent, depth) {
+    tree.prototype.visit = function(parent, depth, fn) {
         var that = this;
         if (!parent) return;
-
-        that.totalNodes++;
-        that.maxLabelLength = Math.max(parent.name.length, that.maxLabelLength);
-        //console.log(parent.name + ", (" + depth + ")/ change : " + (parent.name.length > maxLabelLengths[depth]) + ", (" + (parent.name.length) + " > " + maxLabelLengths[depth] + ")");
-        that.maxLabelLengths[depth] = (parent.name.length > that.maxLabelLengths[depth])? parent.name.length : that.maxLabelLengths[depth];
-        if(!that.maxLabelLengths[depth+1])
-            that.maxLabelLengths[depth+1] = 0;
+        
+        fn.call(that,parent, depth);
         
         var children = parent.children && parent.children.length > 0 ? parent.children : null;
         if (children) {
             var count = children.length;
             for (var i = 0; i < count; i++) {
-                that.visit(children[i], depth+1);
+                that.visit(children[i], depth+1, fn);
             }
         }
     };
@@ -295,20 +353,6 @@ var d3lib = {};
 
         that.svgGroup.attr("transform", "translate(" + that.zoomListener.translate() + ")scale(" + scale + ")");
     };
-
-    // Function to center node when clicked/dropped so node doesn't get lost when collapsing/moving with large amount of children.
-    tree.prototype.centerNode = function(source) {
-        var that = this;
-        var scale = that.zooming?that.zoomListener.scale():that.initScale;
-        var x = -source.y0;
-        var y = -source.x0;
-        x = x * scale + that.width / 2;
-        y = y * scale + that.height / 2;
-        that.container.select('g').transition()
-            .duration(that.duration)
-            .attr("transform", "translate(" + x + "," + y + ")scale(" +  scale + ")");
-        that.zoomListener.translate([x,y]);
-    };
     
     // Toggle children on click.
     tree.prototype.click = function(d) {
@@ -318,7 +362,6 @@ var d3lib = {};
         that.update(d);
         that.centerNode(d);
     };
-    
     
     // === Define private functions ===
 
@@ -330,15 +373,16 @@ var d3lib = {};
             d._children.forEach(collapse);
             d.children = null;
         }
-    }
+    };
 
-    var expand = function(d) {
+    var expand = function(d, depth) {
         if (d._children) {
             d.children = d._children;
-            d.children.forEach(expand);
+            if(typeof(depth) == "undefined" || d.depth < (depth-1))
+                d.children.forEach(function(d){expand(d,depth)});
             d._children = null;
         }
-    }
+    };
 
     // Toggle children function
     var toggleChildren = function(d) {
@@ -350,7 +394,7 @@ var d3lib = {};
             d._children = null;
         }
         return d;
-    }
+    };
     
     d3lib.tree = tree;
 })();
