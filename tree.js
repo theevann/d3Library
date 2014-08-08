@@ -117,6 +117,7 @@ var d3lib = {};
         // Set widths between levels based on maxLabelLength.
         nodes.forEach(function(d) {
             d.y = 0;
+
             if(that.nodeSpacing != 0)
                 d.y = d.depth * that.nodeSpacing;
             else{
@@ -285,11 +286,11 @@ var d3lib = {};
     tree.prototype.zoom = function() {
         var that = this;
         var scale = that.zooming?d3.event.scale:that.initScale;
-        
+
         var transZRegex = /\.*translateZ\((.*)px\)/i;
         var zTrans = transZRegex.exec(dvStyle)[1];
-        
         that.zooming?"": that.zoomListener.translate((d3.event.translate[0]*(-1)),(d3.event.translate[1]*(-1)));
+
         that.svgGroup.attr("transform", "translate(" + d3.event.translate + ")scale(" + scale + ")");
     };
 

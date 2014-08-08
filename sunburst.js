@@ -27,6 +27,7 @@
     var b = {
         w: 75, h: 30, s: 3, t: 10
     };
+    var heightDivBC = b.h + 20;
   
      // Mapping of step names to colors.
     var colors = d3.scale.category10();
@@ -38,7 +39,7 @@
         that.container = d3.select(args.container);
         that.data = args.data;
         
-        //Optionnal arguments
+        //Optional arguments
         that.normalSunburst = !(args.bilevel || false); // Have a normal or bilevel sunBbrst
         that.activeBreadcrumb = !(args.desactiveBreadcrumb || false);
         that.showPercentage = !(args.hidePercentage || false);
@@ -52,25 +53,25 @@
             alert("Please give width / height to the container");
             throw "No dimension set to container";
         }
-        that.radius = Math.min(that.width, that.height) / 2 - 10;
+        that.radius = Math.min(that.width, that.height-heightDivBC) / 2 - 10;
         
         that.totalSize = 0;
         
         //Creating div containers ...
-        that.container.append("div").attr("id","sequence");
-        var exp = that.container.append("div").attr("id","chart").style("position","relative").append("div").attr("id","explanation");
+        that.container.append("div").attr("id","sequence").style("height",heightDivBC + "px");
+        var exp = that.container.append("div").attr("id","chart").style("position","relative").style("height",(this.height - heightDivBC) + "px").append("div").attr("id","explanation");
         exp.append("span").attr("id","percentage").style("font-size","2.5em").text(" ");
         exp.append("br");
         exp.append("span").attr("id","percentageText").text(" ");
         
         that.chart = that.container.select("#chart").append("svg:svg")
             .attr("width", that.width)
-            .attr("height", that.height)
+            .attr("height", that.height-heightDivBC)
             .append("svg:g")
             .attr("id", "svg_container")
-            .attr("transform", "translate(" + that.width / 2 + "," + that.height / 2 + ")");
+            .attr("transform", "translate(" + that.width / 2 + "," + (that.height-heightDivBC) / 2 + ")");
         
-        exp.style("visibility", "hidden").style("position","absolute").style("top",(0.5*(that.height)-parseFloat(exp.style("height"))/2) + "px").style("left",(0.41*that.width) + "px").style("text-align","center").style("color","#666").style("width",0.19*that.width + "px");  
+        exp.style("visibility", "hidden").style("position","absolute").style("top",(0.5*(that.height-heightDivBC)-parseFloat(exp.style("height"))/2) + "px").style("left",(0.41*that.width) + "px").style("text-align","center").style("color","#666").style("width",0.19*that.width + "px");  
          
         that.normalSunburst?that.initNormal():that.initBilevel();
         that.useSize?that.partition.value(function(d) { return d.size; }):that.partition.value(function(d) { return 1; });
@@ -328,8 +329,8 @@
     sunburst.prototype.initializeBreadcrumbTrail = function() {
         // Add the svg area.
         var trail = this.container.select("#sequence").append("svg:svg")
-            .attr("width", this.width)
-            .attr("height", 50)
+            .attr("width", "100%")
+            .attr("height", "100%")
             .attr("id", "trail");
         // Add the label at the end, for the percentage.
         trail.append("svg:text")

@@ -1,14 +1,48 @@
 ﻿<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!DOCTYPE html>
 <html>
     
     <head>
-        <title>Test file : Sunburst</title>
+        <title>Test file : Tree</title>
         <script src="http://d3js.org/d3.v3.min.js"></script>
-        <script type="text/javascript" src="sunburst.js"></script>
+        <script type="text/javascript" src="tree.js"></script>
     </head>
     <body>
-	
-        <div id="main" style="width:50%;margin:auto;height:500px"></div>
+        <style type="text/css">
+        .node {
+            cursor: pointer;
+        }
+
+        .overlay{
+            background-color:#EEE;
+        }
+           
+        .node circle {
+            fill: #fff;
+            stroke: steelblue;
+            stroke-width: 1.5px;
+        }
+
+        .node text {
+            font-size:10px; 
+            font-family:sans-serif;
+        }
+
+        .link {
+            fill: none;
+            stroke: #ccc;
+            stroke-width: 1.5px;
+        }
+
+        .templink {
+            fill: none;
+            stroke: red;
+            stroke-width: 3px;
+        }
+        </style>
+        <div id="main" style="width:50%;margin:auto;height:700px"></div>
         <script type="text/javascript">
             var myData = 
 			{
@@ -395,16 +429,15 @@
             var myArgs = {
                 container: document.getElementById("main"),
                 data : myData,
-                desactiveBreadcrumb : false,
-				notUseSize : true,
-				bilevel : true,
-                hidePercentage : false,
-                explanationText: "from FLARE"
+                nodeSpacing : 150,
+                disableInteraction : false,
+                stickToContainer : false,
+                disableZoom : true
             };
             
-            var mySunburst = new sunburst(myArgs);
+            var myTree = new d3lib.tree(myArgs);
             
-            mySunburst.createVisualization();
+            myTree.createVisualization();
             
         </script>
     </body>
