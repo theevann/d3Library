@@ -429,10 +429,11 @@
             var myArgs = {
                 container: document.getElementById("main"),
                 data : myData,
-                nodeSpacing : 150,
+                nodeSpacing : 300,
                 disableInteraction : false,
                 stickToContainer : false,
-                disableZoom : true
+                disableZoom : false,
+                initialExpandLevel : 2
             };
             
             var myTree = new d3lib.tree(myArgs);
