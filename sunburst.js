@@ -49,7 +49,7 @@
         //Computed attributes
         that.width = parseFloat(that.container.style("width"));
         that.height = parseFloat(that.container.style("height"));
-        if(that.width == 0 || that.height == 0){
+        if(that.width === 0 || that.height === 0){
             alert("Please give width / height to the container");
             throw "No dimension set to container";
         }
