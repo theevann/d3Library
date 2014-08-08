@@ -1,4 +1,5 @@
-﻿var d3lib = {};
+﻿"use strict";
+var d3lib = {};
 (function() {
     var tree = function (args){
         var that = this;
@@ -10,7 +11,7 @@
         //Optional arguments
         that.duration = args.duration || 750;
         that.initScale = args.initScale || 1;
-        that.nodeSpacing = args.nodeSpacing;
+        that.nodeSpacing = args.nodeSpacing || 0;
         that.stickToContainer = args.stickToContainer || false;
         that.interactive = !(args.disableInteraction || false);
         that.zooming = !(args.disableZoom || false);
@@ -116,7 +117,8 @@
         // Set widths between levels based on maxLabelLength.
         nodes.forEach(function(d) {
             d.y = 0;
-            if(that.nodeSpacing)
+
+            if(that.nodeSpacing != 0)
                 d.y = d.depth * that.nodeSpacing;
             else{
                 for( var j = 0 ; j < d.depth ; j++)
@@ -284,6 +286,11 @@
     tree.prototype.zoom = function() {
         var that = this;
         var scale = that.zooming?d3.event.scale:that.initScale;
+
+        var transZRegex = /\.*translateZ\((.*)px\)/i;
+        var zTrans = transZRegex.exec(dvStyle)[1];
+        that.zooming?"": that.zoomListener.translate((d3.event.translate[0]*(-1)),(d3.event.translate[1]*(-1)));
+
         that.svgGroup.attr("transform", "translate(" + d3.event.translate + ")scale(" + scale + ")");
     };
 
