@@ -285,13 +285,15 @@ var d3lib = {};
     // Define the zoom function for the zoomable tree
     tree.prototype.zoom = function() {
         var that = this;
+
+        if(!that.zooming && (d3.event.sourceEvent.type === "wheel")){
+            var transRegex = /.*translate\((-?[\d\.]*),(-?[\d\.]*)\)/i;
+            var trans = transRegex.exec(that.svgGroup.attr("transform")).slice(1);
+            that.zoomListener.translate([trans[0],trans[1]]);
+        }
         var scale = that.zooming?d3.event.scale:that.initScale;
 
-        var transZRegex = /\.*translateZ\((.*)px\)/i;
-        var zTrans = transZRegex.exec(dvStyle)[1];
-        that.zooming?"": that.zoomListener.translate((d3.event.translate[0]*(-1)),(d3.event.translate[1]*(-1)));
-
-        that.svgGroup.attr("transform", "translate(" + d3.event.translate + ")scale(" + scale + ")");
+        that.svgGroup.attr("transform", "translate(" + that.zoomListener.translate() + ")scale(" + scale + ")");
     };
 
     // Function to center node when clicked/dropped so node doesn't get lost when collapsing/moving with large amount of children.
