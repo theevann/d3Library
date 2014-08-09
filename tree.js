@@ -17,8 +17,7 @@ var d3lib = {};
         that.interactive = !(args.disableInteraction || false);
         that.zooming = !(args.disableZoom || false);
         that.overlayColor = args.overlayColor || "#EEE";
-
-        
+   
         //Computed attributes
         that.width = parseFloat(that.container.style("width"));
         that.height = parseFloat(that.container.style("height"));
