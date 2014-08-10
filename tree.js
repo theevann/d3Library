@@ -34,6 +34,7 @@ var d3lib = {};
             });
         
         
+        
         // === INITIALISING TREE ===
         
         // Call visit function to establish maxLabelLength
