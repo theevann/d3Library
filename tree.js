@@ -17,8 +17,7 @@ var d3lib = {};
         that.interactive = !(args.disableInteraction || false);
         that.zooming = !(args.disableZoom || false);
         that.overlayColor = args.overlayColor || "#EEE";
-
-        
+   
         //Computed attributes
         that.width = parseFloat(that.container.style("width"));
         that.height = parseFloat(that.container.style("height"));
@@ -33,6 +32,7 @@ var d3lib = {};
             .projection(function(d) {
                 return [d.y, d.x];
             });
+        
         
         
         // === INITIALISING TREE ===
