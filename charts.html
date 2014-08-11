@@ -1,0 +1,68 @@
+﻿<html>
+	<head>
+		<title>Test file : Charts</title>
+		<script src="d3/d3.min.js"></script>
+        <script src="http://d3js.org/d3.v3.min.js"></script>
+        <script src="charts.js"></script>
+		<style>
+			.axis {
+			  shape-rendering: crispEdges;
+			}
+
+			.x.axis line, .x.axis path  {
+                fill: none;
+			  stroke: #000;
+			}
+
+			.y.axis line, .y.axis path {
+			  fill: none;
+			  stroke: #000;
+			}
+		</style>
+	</head>
+	<body>
+
+        <div id="graph" style="width:50%;margin:auto;height:700px"></div>
+
+	<script>
+    
+        var current = 150;
+        var myData = [
+                    {
+        				data : d3.range(0,60,2).map(function(d){current += (Math.random()*20-10); return [d, current];}),
+        				sort : true,
+			            interpolate : "monotone",
+			            parseTime : true,
+			            fill : true,
+        			},
+                    {
+        				data : d3.range(3,60,10).map(function(d){current += (Math.random()*20-10); return [d, current];}),
+        				sort : true,
+			            interpolate : "monotone",
+			            parseTime : true,
+        			},
+                    {
+        				data : d3.range(0,60,1).map(function(d){current += (Math.random()*30-20); return [d, current];}),
+        				sort : true,
+			            interpolate : "monotone",
+			            parseTime : true,
+			            fill : false
+        			}
+                    ];
+        
+        var myArgs = {
+            container: document.getElementById("graph")
+            ,series : myData
+            ,grid : true
+            ,fill : false
+            ,guideLine : true
+            ,yExtent : [50,250]
+        };
+        
+        var myChart = new d3lib.chart(myArgs);
+        myChart.createVisualization();
+    
+	</script>
+
+	</body>
+</html>
