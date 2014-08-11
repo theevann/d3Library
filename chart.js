@@ -130,7 +130,7 @@ var d3lib = {};
                 .attr("dx", 10)
                 .text(d3.format(",.2f")(d[1]));
         };
-        that.helpGroup = that.graph.append("g");
+        that.helpGroup = that.graph.append("g").style("display", "none");
         
         that.guideLine = that.helpGroup.append("line")
             .attr("id", "guideline")

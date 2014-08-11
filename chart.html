@@ -2,7 +2,8 @@
 	<head>
 		<title>Simple Line Graph using SVG and d3.js</title>
         <script src="http://d3js.org/d3.v3.min.js"></script>
-		<style>			
+        <script src="chart.js"></script>
+		<style>
 			.axis {
 			  shape-rendering: crispEdges;
 			}
@@ -10,10 +11,6 @@
 			.x.axis line, .x.axis path  {
                 fill: none;
 			  stroke: #000;
-			}
-
-			.x.axis .minor {
-			  stroke-opacity: .5;
 			}
 
 			.y.axis line, .y.axis path {
