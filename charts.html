@@ -1,23 +1,14 @@
-﻿<html>
+<html>
 	<head>
 		<title>Test file : Charts</title>
 		<script src="d3/d3.min.js"></script>
         <script src="http://d3js.org/d3.v3.min.js"></script>
         <script src="charts.js"></script>
-		<style>
+		<style>/*
 			.axis {
 			  shape-rendering: crispEdges;
 			}
-
-			.x.axis line, .x.axis path  {
-                fill: none;
-			  stroke: #000;
-			}
-
-			.y.axis line, .y.axis path {
-			  fill: none;
-			  stroke: #000;
-			}
+			*/
 		</style>
 	</head>
 	<body>
@@ -36,13 +27,20 @@
 			            fill : true,
         			},
                     {
-        				data : d3.range(3,60,10).map(function(d){current += (Math.random()*20-10); return [d, current];}),
+        				data : d3.range(3,60,5).map(function(d){current += (Math.random()*10-5); return [d, current];}),
         				sort : true,
 			            interpolate : "monotone",
 			            parseTime : true,
         			},
                     {
-        				data : d3.range(0,60,1).map(function(d){current += (Math.random()*30-14); return [d, current];}),
+        				data : d3.range(0,60,1).map(function(d){current += (Math.random()*30-15); return [d, current];}),
+        				sort : true,
+			            interpolate : "monotone",
+			            parseTime : true,
+			            fill : false
+        			},
+                    {
+        				data : d3.range(0,60,1).map(function(d){current += (Math.random()*30-15); return [d, current];}),
         				sort : true,
 			            interpolate : "monotone",
 			            parseTime : true,
@@ -56,7 +54,7 @@
             ,grid : true
             ,fill : false
             ,guideLine : true
-            ,yExtent : [50,250]
+            ,yExtent : false//[50,250]
         };
         
         var myChart = new d3lib.chart(myArgs);
