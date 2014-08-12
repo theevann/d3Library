@@ -1,4 +1,5 @@
-﻿var d3lib = {};
+/* global d3: false */
+var d3lib = {};
 (function () {
     'use strict';
 
@@ -78,7 +79,12 @@
         that.containerHeight = parseFloat(that.container.style('height'));
         that.width = that.containerWidth - (m[1] + m[3]);
         that.height = that.containerHeight - (m[0] + m[2]);
-
+        
+        if(that.width === 0 || that.height === 0){
+            alert("Please give width / height to the container");
+            throw "No dimension set to container";
+        }
+        
         that.x = d3.scale.linear().domain(xExt).range([0, that.width]);
         that.y = d3.scale.linear().domain(that.yExtent).range([that.height, 0]);
 
@@ -99,13 +105,6 @@
                 return that.y(d[1]);
             });
 
-        // Add an SVG element with the desired dimensions and margin.
-        that.graph = that.container.append('svg:svg')
-            .attr('width', that.containerWidth)
-            .attr('height', that.containerHeight)
-            .append('svg:g')
-            .attr('transform', 'translate(' + m[3] + ',' + m[0] + ')');
-
         that.series.forEach(function (d, i) {
             if (d.sort[i]) {
                 d.data.sort(function (a, b) {
@@ -113,12 +112,22 @@
                 });
             }
         });
+        
+        window.addEventListener('resize', resize.bind(that));
     };
 
     //Function to plot the chart - Public
     chart.prototype.createVisualization = function () {
         var that = this;
-
+        
+        // Add an SVG element with the desired dimensions and margin.
+        that.container.selectAll('svg').remove();
+        that.graph = that.container.append('svg:svg')
+            .attr('width', that.containerWidth)
+            .attr('height', that.containerHeight)
+            .append('svg:g')
+            .attr('transform', 'translate(' + that.margin[3] + ',' + that.margin[0] + ')');
+        
         if (that.grid) {
             displayGrid.call(this);
         }
@@ -253,6 +262,11 @@
             .on('mousemove', mousemove);
     };
 
+    chart.prototype.initHightligth = function () {
+        var that = this;
+        
+    };
+
     chart.prototype.guideLineFollow = function (serieNumber) {
         this.serieFollowed = serieNumber;
     };
@@ -287,6 +301,17 @@
 
         g.selectAll('path').style('display', 'none');
     };
-
+    
+    var resize = function () {
+        var that = this;
+        that.containerWidth = parseFloat(that.container.style('width'));
+        that.containerHeight = parseFloat(that.container.style('height'));
+        that.width = that.containerWidth - (that.margin[1] + that.margin[3]);
+        that.height = that.containerHeight - (that.margin[0] + that.margin[2]);
+        that.x.range([0, that.width]);
+        that.y.range([that.height, 0]);
+        that.createVisualization();
+    };
+    
     d3lib.chart = chart;
 })();
