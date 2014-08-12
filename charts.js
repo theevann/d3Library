@@ -66,7 +66,7 @@ var d3lib = {};
         that.interpolate = that.series.map(function (d) {
             return d.interpolate || args.interpolate || 'linear';
         });
-        that.name = that.series.map(function (d,i) {
+        that.name = that.series.map(function (d, i) {
             return d.name || ('Serie ' + i);
         });
 
@@ -83,12 +83,12 @@ var d3lib = {};
         that.containerHeight = parseFloat(that.container.style('height'));
         that.width = that.containerWidth - (m[1] + m[3]);
         that.height = that.containerHeight - (m[0] + m[2]);
-        
-        if(that.width === 0 || that.height === 0){
+
+        if (that.width === 0 || that.height === 0) {
             alert('Please give width / height to the container');
             throw 'No dimension set to container';
         }
-        
+
         that.x = d3.scale.linear().domain(xExt).range([0, that.width]);
         that.y = d3.scale.linear().domain(that.yExtent).range([that.height, 0]);
 
@@ -116,14 +116,14 @@ var d3lib = {};
                 });
             }
         });
-        
+
         window.addEventListener('resize', resize.bind(that));
     };
 
     //Function to plot the chart - Public
     chart.prototype.createVisualization = function () {
         var that = this;
-        
+
         // Add an SVG element with the desired dimensions and margin.
         that.container.selectAll('svg').remove();
         that.graph = that.container.append('svg:svg')
@@ -131,7 +131,7 @@ var d3lib = {};
             .attr('height', that.containerHeight)
             .append('svg:g')
             .attr('transform', 'translate(' + that.margin[3] + ',' + that.margin[0] + ')');
-        
+
         if (that.grid) {
             displayGrid.call(this);
         }
@@ -148,11 +148,11 @@ var d3lib = {};
                 that.area.interpolate(that.interpolate[i]);
                 that.graphs.append('svg:path').classed('area', true)
                     .attr('d', that.area(d.data))
-                    .style('pointer-events','none')
+                    .style('pointer-events', 'none')
                     .style('fill', that.color[i]);
             }
         });
-        
+
         that.series.forEach(function (d, i) {
             that.line.interpolate(that.interpolate[i]);
             that.graphs.append('svg:path').classed('line', true)
@@ -160,7 +160,7 @@ var d3lib = {};
                 .style('stroke', that.fillColor[i])
                 .style('stroke-width', that.strokeWidth[i]);
         });
-        
+
         that.graphs.selectAll('.area')
             .style('stroke', 'none')
             .style('opacity', '0.5');
@@ -180,16 +180,16 @@ var d3lib = {};
             .call(yAxisLeft);
 
         d3.selectAll('.axis line, .axis path')
-            .style('stroke','#000')
-            .style('fill','none');
-            
+            .style('stroke', '#000')
+            .style('fill', 'none');
+
         d3.selectAll('.axis')
-            .style('shape-rendering','crispEdges');
-            
+            .style('shape-rendering', 'crispEdges');
+
         if (that.showGuideLine) {
             that.initGuideLine();
         }
-        
+
         if (that.hightLight) {
             that.initHightligth();
         }
@@ -211,7 +211,7 @@ var d3lib = {};
             .style('stroke', 'lightgrey')
             .style('stroke-width', 2);
 
-        that.focus = that.series.map(function (d) {
+        that.focus = that.series.map(function () {
             that.helpGroup.append('text').style('font-size', '0.8em').style('pointer-events', 'none');
             return that.helpGroup.append('circle')
                 .attr('id', 'guideline')
@@ -231,7 +231,7 @@ var d3lib = {};
             })
             .on('mouseout', function () {
                 //If the focus is taken by a line => it means we didn't go out of the graph
-                if(!d3.select(d3.event.toElement).classed('line'))
+                if (!d3.select(d3.event.toElement).classed('line'))
                     that.helpGroup.style('display', 'none');
             })
             .on('mousemove', updateGuideLine.bind(that));
@@ -241,19 +241,19 @@ var d3lib = {};
         var that = this,
             mouseover,
             mouseout;
-        
+
         mouseover = function () {
-            var stw = parseInt(d3.select(this).style('stroke-width'),10);
-            d3.select(this).style('stroke-width',(stw*1.5));
+            var stw = parseInt(d3.select(this).style('stroke-width'), 10);
+            d3.select(this).style('stroke-width', (stw * 1.5));
             updateGuideLine.call(that);
         };
-        
+
         mouseout = function () {
-            var stw = parseInt(d3.select(this).style('stroke-width'),10);
-            d3.select(this).style('stroke-width',(stw/1.5));
+            var stw = parseInt(d3.select(this).style('stroke-width'), 10);
+            d3.select(this).style('stroke-width', (stw / 1.5));
             updateGuideLine.call(that);
         };
-        
+
         that.graphs.selectAll('.line')
             .style('pointer-events', 'stroke')
             .on('mouseover', mouseover)
@@ -295,7 +295,7 @@ var d3lib = {};
 
         g.selectAll('path').style('display', 'none');
     };
-    
+
     var resize = function () {
         var that = this;
         that.containerWidth = parseFloat(that.container.style('width'));
@@ -306,7 +306,7 @@ var d3lib = {};
         that.y.range([that.height, 0]);
         that.createVisualization();
     };
-    
+
     var updateGuideLine = function () {
         var that = this,
             min = function (array) {
@@ -315,7 +315,7 @@ var d3lib = {};
                     currentMin = array[i] < array[currentMin] ? i : currentMin;
                 return currentMin;
             };
-        
+
         var x0 = that.x.invert(d3.mouse(that.graph.node())[0]),
             index = that.series.map(function (d) {
                 return bisect(d.data, x0, 1);
@@ -354,6 +354,6 @@ var d3lib = {};
                 return d3.format(',.2f')(dd[i][1]);
             });
     };
-    
+
     d3lib.chart = chart;
 })();
