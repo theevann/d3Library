@@ -49,10 +49,12 @@
         //Computed attributes
         that.width = parseFloat(that.container.style("width"));
         that.height = parseFloat(that.container.style("height"));
+        
         if(that.width === 0 || that.height === 0){
             alert("Please give width / height to the container");
             throw "No dimension set to container";
         }
+        
         that.radius = Math.min(that.width, that.height-heightDivBC) / 2 - 10;
         
         that.totalSize = 0;
@@ -198,8 +200,9 @@
         
         var percentage = (100 * d.value / this.totalSize).toPrecision(3);
         var percentageString = percentage + "%";
-        if (percentage < 0.1) {
-            percentageString = "< 0.1%";
+        
+        if (percentage < 0.01) {
+            percentageString = "< 0.01%";
         }
         
         this.container.select("#percentage")
@@ -414,8 +417,8 @@
     
     /*
      *  Common Functions not specific to a class
-     */   
-  
+     */
+
     function getAncestors(node) {
         var path = [];
         var current = node;
@@ -451,4 +454,5 @@
     function updateArc(d) {
         return {depth: d.depth, x: d.x, dx: d.dx};
     }
+    
 })();
