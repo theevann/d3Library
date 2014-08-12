@@ -43,6 +43,7 @@ var d3lib = {};
         //Optional arguments
         that.grid = args.grid || false;
         that.showGuideLine = args.guideLine || false;
+        that.hightLight = args.hightLight || false;
         m = that.margin = args.margin || [80, 80, 80, 80]; // [Top, Right, Bottom, Left]
         that.yExtent = args.yExtent || yExt;
         that.serieFollowed = args.serieFollowed || -1;
@@ -65,6 +66,9 @@ var d3lib = {};
         that.interpolate = that.series.map(function (d) {
             return d.interpolate || args.interpolate || 'linear';
         });
+        that.name = that.series.map(function (d,i) {
+            return d.name || ('Serie ' + i);
+        });
 
         that.parseTime = args.parseTime || false;
         that.animate = args.animate || false;
@@ -81,8 +85,8 @@ var d3lib = {};
         that.height = that.containerHeight - (m[0] + m[2]);
         
         if(that.width === 0 || that.height === 0){
-            alert("Please give width / height to the container");
-            throw "No dimension set to container";
+            alert('Please give width / height to the container');
+            throw 'No dimension set to container';
         }
         
         that.x = d3.scale.linear().domain(xExt).range([0, that.width]);
@@ -132,27 +136,36 @@ var d3lib = {};
             displayGrid.call(this);
         }
 
-        var graphs = that.graph.append('g').attr('id', 'graphs');
+        that.overlay = that.graph.append('rect')
+            .attr('class', 'overlay')
+            .attr('width', that.width)
+            .attr('height', that.height)
+            .attr('fill', 'none');
+
+        that.graphs = that.graph.append('g').attr('id', 'graphs').style('pointer-events', 'none');
         that.series.forEach(function (d, i) {
             if (that.fill[i]) {
                 that.area.interpolate(that.interpolate[i]);
-                graphs.append('svg:path').classed('area', true).datum(d.data)
-                    .attr('d', that.area)
+                that.graphs.append('svg:path').classed('area', true)
+                    .attr('d', that.area(d.data))
+                    .style('pointer-events','none')
                     .style('fill', that.color[i]);
             }
-
+        });
+        
+        that.series.forEach(function (d, i) {
             that.line.interpolate(that.interpolate[i]);
-            graphs.append('svg:path').classed('line', true)
-                .attr('d', that.line.bind(this, d.data))
+            that.graphs.append('svg:path').classed('line', true)
+                .attr('d', that.line(d.data))
                 .style('stroke', that.fillColor[i])
                 .style('stroke-width', that.strokeWidth[i]);
         });
-
-        graphs.selectAll('.area')
+        
+        that.graphs.selectAll('.area')
             .style('stroke', 'none')
             .style('opacity', '0.5');
 
-        graphs.selectAll('.line')
+        that.graphs.selectAll('.line')
             .style('fill', 'none');
 
         var xAxis = d3.svg.axis().scale(that.x).tickSubdivide(true);
@@ -166,62 +179,24 @@ var d3lib = {};
             .attr('class', 'y axis')
             .call(yAxisLeft);
 
+        d3.selectAll('.axis line, .axis path')
+            .style('stroke','#000')
+            .style('fill','none');
+            
+        d3.selectAll('.axis')
+            .style('shape-rendering','crispEdges');
+            
         if (that.showGuideLine) {
             that.initGuideLine();
+        }
+        
+        if (that.hightLight) {
+            that.initHightligth();
         }
     };
 
     chart.prototype.initGuideLine = function () {
-        var that = this,
-            min,
-            mousemove;
-
-        min = function (array) {
-            var currentMin = 0;
-            for (var i = 0; i < array.length; i++)
-                currentMin = array[i] < array[currentMin] ? i : currentMin;
-            return currentMin;
-        };
-
-        mousemove = function () {
-            var x0 = that.x.invert(d3.mouse(that.graph.node())[0]),
-                index = that.series.map(function (d) {
-                    return bisect(d.data, x0, 1);
-                }),
-                d0 = that.series.map(function (d, i) {
-                    return d.data[index[i] - 1];
-                }),
-                d1 = that.series.map(function (d, i) {
-                    return d.data[index[i]];
-                }),
-                dd = that.series.map(function (d, i) {
-                    return d1[i] ? (x0 - d0[i][0] > d1[i][0] - x0 ? d1[i] : d0[i]) : d0[i];
-                }),
-                serieFollowed = that.serieFollowed != -1 ? that.serieFollowed : min(dd.map(function (d, i) {
-                    return Math.abs(x0 - dd[i][0]);
-                }));
-
-            that.guideLine
-                .attr('x1', that.x(dd[serieFollowed][0]))
-                .attr('x2', that.x(dd[serieFollowed][0]));
-
-            that.focus.forEach(function (d, i) {
-                d.attr('cx', that.x(dd[i][0]))
-                    .attr('cy', that.y(dd[i][1]));
-            });
-
-            that.helpGroup.selectAll('text')
-                .attr('x', function (d, i) {
-                    return that.x(dd[i][0]);
-                })
-                .attr('y', function (d, i) {
-                    return that.y(dd[i][1]);
-                })
-                .attr('dx', 10)
-                .text(function (d, i) {
-                    return d3.format(',.2f')(dd[i][1]);
-                });
-        };
+        var that = this;
 
         that.helpGroup = that.graph.append('g').attr('id', 'helpGroup').style('display', 'none');
 
@@ -231,40 +206,59 @@ var d3lib = {};
             .attr('y1', 0)
             .attr('x2', 0)
             .attr('y2', that.height)
+            .style('pointer-events', 'none')
             .style('fill', 'none')
             .style('stroke', 'lightgrey')
             .style('stroke-width', 2);
 
         that.focus = that.series.map(function (d) {
-            that.helpGroup.append('text').style('font-size', '0.8em');
+            that.helpGroup.append('text').style('font-size', '0.8em').style('pointer-events', 'none');
             return that.helpGroup.append('circle')
                 .attr('id', 'guideline')
                 .attr('cx', 0)
                 .attr('cy', 0)
                 .attr('r', 5)
+                .style('pointer-events', 'none')
                 .style('fill', 'none')
                 .style('stroke', 'steelblue')
                 .style('stroke-width', 1);
         });
 
-        that.graph.append('rect')
-            .attr('class', 'overlay')
-            .attr('width', that.width)
-            .attr('height', that.height)
-            .attr('fill', 'none')
+        that.overlay
             .style('pointer-events', 'all')
             .on('mouseover', function () {
                 that.helpGroup.style('display', null);
             })
             .on('mouseout', function () {
-                that.helpGroup.style('display', 'none');
+                //If the focus is taken by a line => it means we didn't go out of the graph
+                if(!d3.select(d3.event.toElement).classed('line'))
+                    that.helpGroup.style('display', 'none');
             })
-            .on('mousemove', mousemove);
+            .on('mousemove', updateGuideLine.bind(that));
     };
 
     chart.prototype.initHightligth = function () {
-        var that = this;
+        var that = this,
+            mouseover,
+            mouseout;
         
+        mouseover = function () {
+            var stw = parseInt(d3.select(this).style('stroke-width'),10);
+            d3.select(this).style('stroke-width',(stw*1.5));
+            updateGuideLine.call(that);
+        };
+        
+        mouseout = function () {
+            var stw = parseInt(d3.select(this).style('stroke-width'),10);
+            d3.select(this).style('stroke-width',(stw/1.5));
+            updateGuideLine.call(that);
+        };
+        
+        that.graphs.selectAll('.line')
+            .style('pointer-events', 'stroke')
+            .on('mouseover', mouseover)
+            .on('mouseout', mouseout)
+            .on('mousemove', updateGuideLine.bind(that));
     };
 
     chart.prototype.guideLineFollow = function (serieNumber) {
@@ -311,6 +305,54 @@ var d3lib = {};
         that.x.range([0, that.width]);
         that.y.range([that.height, 0]);
         that.createVisualization();
+    };
+    
+    var updateGuideLine = function () {
+        var that = this,
+            min = function (array) {
+                var currentMin = 0;
+                for (var i = 0; i < array.length; i++)
+                    currentMin = array[i] < array[currentMin] ? i : currentMin;
+                return currentMin;
+            };
+        
+        var x0 = that.x.invert(d3.mouse(that.graph.node())[0]),
+            index = that.series.map(function (d) {
+                return bisect(d.data, x0, 1);
+            }),
+            d0 = that.series.map(function (d, i) {
+                return d.data[index[i] - 1];
+            }),
+            d1 = that.series.map(function (d, i) {
+                return d.data[index[i]];
+            }),
+            dd = that.series.map(function (d, i) {
+                return d1[i] ? (x0 - d0[i][0] > d1[i][0] - x0 ? d1[i] : d0[i]) : d0[i];
+            }),
+            serieFollowed = that.serieFollowed != -1 ? that.serieFollowed : min(dd.map(functiqon (d, i) {
+                return Math.abs(x0 - dd[i][0]);
+            }));
+
+        that.guideLine
+            .attr('x1', that.x(dd[serieFollowed][0]))
+            .attr('x2', that.x(dd[serieFollowed][0]));
+
+        that.focus.forEach(function (d, i) {
+            d.attr('cx', that.x(dd[i][0]))
+                .attr('cy', that.y(dd[i][1]));
+        });
+
+        that.helpGroup.selectAll('text')
+            .attr('x', function (d, i) {
+                return that.x(dd[i][0]);
+            })
+            .attr('y', function (d, i) {
+                return that.y(dd[i][1]);
+            })
+            .attr('dx', 10)
+            .text(function (d, i) {
+                return d3.format(',.2f')(dd[i][1]);
+            });
     };
     
     d3lib.chart = chart;
