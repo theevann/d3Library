@@ -72,6 +72,7 @@ var d3lib = {};
         
         // Define the baseSvg, attaching a class for styling and the zoomListener
         // Append a group which holds all nodes and which the zoom Listener can act upon.
+        that.svgGroup.selectAll("svg").remove();
         that.svgGroup = that.container.append("svg")
             .attr("width", that.width)
             .attr("height", that.height)
