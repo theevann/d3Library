@@ -51,16 +51,6 @@ var d3lib = {};
         // define the zoomListener which calls the zoom function on the "zoom" event constrained within the scaleExtents
         that.zoomListener = d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", function(d){that.zoom.call(that,d);});
         that.zoomListener.scale(that.initScale);
-        
-        // Define the baseSvg, attaching a class for styling and the zoomListener
-        // Append a group which holds all nodes and which the zoom Listener can act upon.
-        that.svgGroup = that.container.append("svg")
-            .attr("width", that.width)
-            .attr("height", that.height)
-            .attr("class", "overlay")
-            .style("background-color",that.overlayColor)
-            .call(that.zoomListener)
-            .append("g");
     };
     
     
@@ -79,6 +69,17 @@ var d3lib = {};
     //Function to plot the tree - Public
     tree.prototype.createVisualization = function() {
         var that = this;
+        
+        // Define the baseSvg, attaching a class for styling and the zoomListener
+        // Append a group which holds all nodes and which the zoom Listener can act upon.
+        that.svgGroup = that.container.append("svg")
+            .attr("width", that.width)
+            .attr("height", that.height)
+            .attr("class", "overlay")
+            .style("background-color",that.overlayColor)
+            .call(that.zoomListener)
+            .append("g");
+        
         // Layout the tree initially and center on the root node.
         that.update(that.data);
         if(that.initialExpandLevel >= 0){
@@ -88,6 +89,7 @@ var d3lib = {};
             that.update(that.data);
         }
         that.centerNode(that.data);
+        window.addEventListener('resize', resize.bind(that));
     };
     
     //Collapse all the nodes - Public
@@ -377,7 +379,14 @@ var d3lib = {};
     };
     
     // === Define private functions ===
-
+    
+    //Redraw if resize
+    var resize = function () {
+        var that = this;
+        that.width = parseFloat(that.container.style('width'));
+        that.height = parseFloat(that.container.style('height'));
+        that.createVisualization();
+    };
     
     // Helper functions for collapsing and expanding nodes
     var collapse = function(d) {
