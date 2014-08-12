@@ -329,7 +329,7 @@ var d3lib = {};
             dd = that.series.map(function (d, i) {
                 return d1[i] ? (x0 - d0[i][0] > d1[i][0] - x0 ? d1[i] : d0[i]) : d0[i];
             }),
-            serieFollowed = that.serieFollowed != -1 ? that.serieFollowed : min(dd.map(functiqon (d, i) {
+            serieFollowed = that.serieFollowed != -1 ? that.serieFollowed : min(dd.map(function (d, i) {
                 return Math.abs(x0 - dd[i][0]);
             }));
 
