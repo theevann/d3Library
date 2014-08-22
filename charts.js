@@ -1,5 +1,5 @@
 /* global d3: false */
-var d3lib = {};
+if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 (function () {
     'use strict';
 
@@ -37,7 +37,11 @@ var d3lib = {};
                 return d[0];
             });
         })];
-
+        
+        //So that the curves do not touch the border
+        yExt[0] -= 0.1 * (yExt[1] - yExt[0]);
+        yExt[1] += 0.1 * (yExt[1] - yExt[0]);     
+   
         //Optional arguments
         that.grid = args.grid || false;
         that.showGuideLine = args.guideLine || false;
@@ -180,6 +184,8 @@ var d3lib = {};
         d3.selectAll('.axis line, .axis path')
             .style('stroke', '#000')
             .style('fill', 'none');
+            
+        d3.selectAll(".axis text").style("font","11px sans-serif");
 
         d3.selectAll('.axis')
             .style('shape-rendering', 'crispEdges');

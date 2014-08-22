@@ -1,6 +1,7 @@
-var d3lib = {};
-(function() {
-    "use strict";
+/* global d3: false */
+if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
+(function () {
+    'use strict';
     var tree = function (args){
         var that = this;
         

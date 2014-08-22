@@ -35,13 +35,15 @@
    * You can define the accessor to get the array of records from a point and the accessor to get the value from a record
    * 
    */
- 
-(function(){
+/* global d3: false */
+if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
+(function () {
+    'use strict';
 	var formatValue = d3.format(",.2f");
 	var formatDate = function(d) { return formatValue(d) ; };
 	var taillePas = 2; // height of the gradient line => the bigger it is, the less precise it will be ((has to be integer > 0)			
 		
-	time2DVisualisation = function (args){
+	var time2DVisualisation = function (args){
 		this.data = new Array();
 		
 		this.container = d3.select(args.container);
@@ -63,9 +65,9 @@
 			throw "Incorrect numbers in data or offsets : xOffset.length*yOffset.length = data.length";
 		}
 			
-		this.width = parseFloat(this.container.style("width"))*0.95;
-		this.height = parseFloat(this.container.style("height"))*0.99;
-		this.dimension = {x : parseInt(0.9*this.width,10), y : parseInt(0.95*this.height,10)};
+		this.width = parseFloat(this.container.style("width")) * 0.95;
+		this.height = parseFloat(this.container.style("height")) * 0.99;
+		this.dimension = {x : parseInt(0.9 * this.width, 10), y : parseInt(0.95 * this.height, 10)};
 		
 		this.dataStart = 0;
 		this.dataEnd = this.data[0].length;
@@ -360,4 +362,6 @@
 					,timeStep*(i-start)/frameStep);	
 		}
 	};
+    
+    d3lib.time2DVisualisation = time2DVisualisation;
 })();

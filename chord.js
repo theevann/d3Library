@@ -1,5 +1,6 @@
-﻿var d3lib = {};
-(function() {
+﻿/* global d3: false */
+if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
+(function () {
     'use strict';
     var colors = d3.scale.category10();
 
