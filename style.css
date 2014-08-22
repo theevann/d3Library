@@ -1,37 +1,58 @@
+*{
+    box-sizing : border-box;
+}
+
+#header {
+    width:98%;
+    margin:auto;
+    background-color : white;
+    border-radius: 10px;
+	box-shadow: 3px 3px 6px 0 #A9A9A9;
+    height : 80px;
+    font-size : 2.5em;
+    text-align : center;
+    line-height : 80px;
+}
+
 #wrapper {
     width:75%;
     margin:auto;
-    background-color : green;
+    background-color : white;
     overflow: hidden;
+    border-radius: 10px;
+	box-shadow: 3px 3px 6px 0 #A9A9A9;
+    padding : 0px;
 }
 
 .section {
-    background-color : red;
+    position : relative;
+    background-color : white;
     float : left;
-    width : 48%;
-    height: 200px;
-    margin : 1%;
+    width : 49%;
+    margin: 0.5%;
+    height: 300px;
     overflow: hidden;
+    padding : 0.5%;
+    border-radius: 10px;
+	box-shadow: 1px 1px 3px 2px #A9A9A9;
 }
 
 .graph {
-    background-color : blue;
+    background-color : white;
     width : 60%;
-    height: 98%;
-    margin : 1%;
+    height: 100%;
 }
 
 .explanation {
-    background-color : orange;
-    width : 36%;
-    height: 98%;
-    margin : 1%;
+    background-color : white;
+    width : 40%;
+    height: 100%;
 }
 
 .section:nth-child(odd) .graph, .section:nth-child(odd) .explanation {
-    float : left;
+    float : right;
 }
 
 .section:nth-child(even) .graph, .section:nth-child(even) .explanation {
-    float : right;
+    float : left;
 }

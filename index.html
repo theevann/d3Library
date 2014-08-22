@@ -1,80 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="">
     <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <title>D3 Library</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" type="text/css" href="style.css" />
         <script src="d3/d3.min.js"></script>
-        <script src="http://d3js.org/d3.v3.min.js"></script>
-        <script type="text/javascript" src="charts.js"></script>
+        <script>window.d3 || document.write('<script src="http://d3js.org/d3.v3.min.js"><\/script>')</script>
     </head>
-    <body>
+    <body> 
         <div id="wrapper" style="">
-            <div class="section">
-                <div class="explanation">
-                    This is some explanation text
-                </div>
-                <div class="graph">
-                    
-                </div>
-            </div>
-            <div class="section">
-                <div class="explanation">
-                    This is some explanation text
-                </div>
-                <div class="graph">
-                    
-                </div>
-            </div>
-            <div class="section">
-                <div class="explanation">
-                    This is some explanation text
-                </div>
-                <div class="graph">
-                    
-                </div>
-            </div>
-            <div class="section">
-                <div class="explanation">
-                    This is some explanation text
-                </div>
-                <div class="graph">
-                    
-                </div>
-            </div>
-        </div>
+        <div id="header">D3 Library</div>
+        </div>    
+        
         <script>
-        /* global d3,d3lib: false */
-        var currentGraph = 0;
-        (function () {
-            var current = 150;
-            var myData = [
-                        {
-            				data : d3.range(0,60,2).map(function(d){current += (Math.random()*20-10); return [d, current];}),
-            				sort : true,
-    			            interpolate : "monotone",
-    			            parseTime : true,
-    			            fill : true,
-            			},
-                        {
-            				data : d3.range(3,60,5).map(function(d){current += (Math.random()*10-5); return [d, current];}),
-            				sort : true,
-    			            interpolate : "monotone",
-    			            parseTime : true,
-            			}
-                        ];
-            
-            var myArgs = {
-                container: document.querySelector("section:nth-child(" + ++currentGraph + ") graph")
-                ,series : myData
-                ,grid : true
-                ,fill : false
-                ,guideLine : true
-                ,yExtent : false//[50,250]
-            };
-            
-            var myChart = new d3lib.chart(myArgs);
-            myChart.createVisualization();
-        })();
+            var currentContainer = {};
+            (function () {
+                var currentGraph, tempDiv,
+                    graphs = ["charts","tree","sunburst","chord", "timeViz"],
+                    wrapper = document.getElementById('wrapper');
+                
+                graphs.forEach( function (d) {
+                    currentGraph = document.createElement('div');
+                    currentGraph.className = 'section';
+                    tempDiv = document.createElement('div');
+                    tempDiv.className = 'explanation';
+                    currentGraph.appendChild(tempDiv);
+                    tempDiv = document.createElement('div');
+                    tempDiv.className = 'graph';
+                    currentGraph.appendChild(tempDiv);
+                    wrapper.appendChild(currentGraph);
+                    currentContainer[d] = tempDiv;
+                    document.write('<script src="' + d + '.js"><\/script>')
+                    document.write('<script src="' + d + 'Example.js"><\/script>')
+                    
+                });
+                
+            })();
 	    </script>
     </body>
 </html>
