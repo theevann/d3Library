@@ -385,9 +385,10 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
     //Redraw if resize
     var resize = function () {
         var that = this;
+        clearTimeout(that.timeout);
         that.width = parseFloat(that.container.style('width'));
         that.height = parseFloat(that.container.style('height'));
-        that.createVisualization();
+        that.timeout = setTimeout(function(){that.createVisualization();}, 1000);
     };
     
     // Helper functions for collapsing and expanding nodes

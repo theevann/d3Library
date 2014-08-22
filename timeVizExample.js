@@ -2,7 +2,7 @@
     var myData=[];
     
     var getFile = function(file) {
-        d3.json("http://wikisensing.org/WikiSensingServiceAPI/DCESensorDeployment2f7M76vkKdRlvm7vVWg/Node_" + (file + 1), function(error, json) {
+        d3.json("http://wikisensing.org/WikiSensingServiceAPI/DCESensorDeployment2f7M76vkKdRlvm7vVWg/Node_" + (file + 1) + "/300", function(error, json) {
             if (error) {
                 return console.warn(error);
             }

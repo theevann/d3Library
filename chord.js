@@ -18,8 +18,8 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
         that.padding = args.padding || 0.05;
         that.interactive = !(args.disableInteraction || false);
         m = that.margin = args.margin || [20, 20, 20, 20]; // [Top, Right, Bottom, Left]
-        that.innerRadius = args.innerRadius || 0;
-        that.outerRadius = args.outerRadius || 0;
+        that.innerRadius = { user : args.innerRadius || 0 };
+        that.outerRadius = { user : args.outerRadius || 0 };
         that.colors = args.colors || d3.range(10).map(function (d, i) {return colors(i);});
         that.names = args.names || [];
 
@@ -28,21 +28,18 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
         that.containerHeight = parseFloat(that.container.style('height'));
         that.width = that.containerWidth - (m[1] + m[3]);
         that.height = that.containerHeight - (m[0] + m[2]);
-        that.innerRadius = that.innerRadius || Math.min(that.width, that.height) * 0.45;
-        that.outerRadius = that.outerRadius || Math.min(that.innerRadius * 1.1, Math.min(that.width, that.height) / 2);
-
+        that.innerRadius = that.innerRadius.user || Math.min(that.width, that.height) * 0.45;
+        that.outerRadius = that.outerRadius.user || Math.min(that.innerRadius * 1.1, Math.min(that.width, that.height) / 2);
         that.chord = d3.layout.chord()
             .padding(that.padding)
             .sortSubgroups(d3.descending)
             .matrix(that.data);
     };
 
-
-
     //Function to plot the chart - Public
     chord.prototype.createVisualization = function () {
         var that = this;
-
+        console.log("create");
         // Add an SVG element with the desired dimensions and margin.
         that.container.selectAll('svg').remove();
         that.innerContainer = that.container.append('svg:svg')
@@ -88,6 +85,8 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
             .style('fill', function (d) { return that.colors[d.target.index % that.colors.length]; })
             .style({"fill-opacity": .67, "stroke": "#000", "stroke-width": ".5px"})
             .style('opacity', 1);
+            
+        window.addEventListener('resize', resize.bind(that));
     };
 
      // Returns an event handler for fading a given chord group.
@@ -100,6 +99,20 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
             .style('opacity', opacity);
         };
     };
-
+    
+    //Redraw if resize
+    var resize = function () {
+        var that = this,
+            m = that.margin;
+        clearTimeout(that.timeout);
+        that.containerWidth = parseFloat(that.container.style('width'));
+        that.containerHeight = parseFloat(that.container.style('height'));
+        that.width = that.containerWidth - (m[1] + m[3]);
+        that.height = that.containerHeight - (m[0] + m[2]);
+        that.innerRadius = that.innerRadius.user || Math.min(that.width, that.height) * 0.45;
+        that.outerRadius = that.outerRadius.user || Math.min(that.innerRadius * 1.1, Math.min(that.width, that.height) / 2);
+        that.timeout = setTimeout(function(){that.createVisualization();}, 1000);
+    };
+    
     d3lib.chord = chord;
 })();
