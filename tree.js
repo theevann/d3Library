@@ -1,6 +1,6 @@
-"use strict";
 var d3lib = {};
 (function() {
+    "use strict";
     var tree = function (args){
         var that = this;
         

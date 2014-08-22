@@ -29,16 +29,14 @@ var d3lib = {};
             });
         })];
         xExt = [d3.min(that.series, function (d) {
-                return d3.min(d.data, function (d) {
-                    return d[0];
-                });
-            }),
-            d3.max(that.series, function (d) {
-                return d3.max(d.data, function (d) {
-                    return d[0];
-                });
-            })
-        ];
+            return d3.min(d.data, function (d) {
+                return d[0];
+            });
+        }), d3.max(that.series, function (d) {
+            return d3.max(d.data, function (d) {
+                return d[0];
+            });
+        })];
 
         //Optional arguments
         that.grid = args.grid || false;
