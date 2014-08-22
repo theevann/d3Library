@@ -1,77 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 
-  <!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame 
-       Remove this if you use the .htaccess -->
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>Test file : TimeViz</title>
+        <meta name="description" content="">
+        <meta name="author" content="Evann">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="http://d3js.org/d3.v3.min.js"></script>
+        <script src="timeViz.js"></script>  
+    </head>
 
-  <title>testFile</title>
-  <meta name="description" content="">
-  <meta name="author" content="Evann">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="http://d3js.org/d3.v3.min.js"></script>
-  <script src="timeViz.js"></script>  
-</head>
+    <body>
+        <div id="graph" style="width:1000px;height:700px"></div>
 
-<body>
-  <div>
-    <header>
-      <h1>testFile</h1>
-    </header>
-    <div id="chart" style="width:1000px;height:700px">
-    
-    </div>
-
-    <footer>
-     <p>&copy; Copyright  by Evann</p>
-    </footer>
-  </div>
-  	<script>
-  	var myData=[];
-  	var getFile=function(file) {
-  		d3.json("http://wikisensing.org/WikiSensingServiceAPI/DCESensorDeployment2f7M76vkKdRlvm7vVWg/Node_" +(file + 1), function(error, json) {
-  			if(error) {
-  				return console.warn(error);
-  			}
-  			myData[file]=json;
-  			if(file==14) {
-  				var myArgs= {
-  					container : document.getElementById("chart"),
-  					xOffset :[0, 25, 50, 75, 100],
-  					yOffset :[0, 50, 100],
-  					speed: 500,
-  					valueArrayAccessor: function(d) {
-  						return d.sensorRecords;
-  					},
-  					valueAccessor: function(d) {
-  						return d.sensorObject[10].value;
-  					},
-  					scalingPeriod: 1,
-  					color:["blue", "#27f600", "yellow", "orange", "red"],
-  					data : myData
-  				}
-  				;
-  				myTest = new time2DVisualisation(myArgs);
-  				myTest.play();
-  			}
-  			else if(file < 14) {
-  				getFile(file + 1);
-  			}
-  		}
-  		);
-  	};
-  	getFile(0);
-  	
-  	
-  	/*
-  	data: [
-			{sensorRecord : [{date:"0",val:"10"},{date:"1",val:"9"},{date:"2",val:"8"}]},{sensorRecord : [{date:"0",val:"10"},{date:"1",val:"9"},{date:"2",val:"8"}]},{sensorRecord : [{date:"0",val:"10"},{date:"1",val:"9"},{date:"2",val:"8"}]},
-			{sensorRecord : [{date:"0",val:"7"},{date:"1",val:"7"},{date:"2",val:"7"}]},{sensorRecord : [{date:"0",val:"10"},{date:"1",val:"9"},{date:"2",val:"8"}]},{sensorRecord : [{date:"0",val:"10"},{date:"1",val:"9"},{date:"2",val:"8"}]},
-			{sensorRecord : [{date:"0",val:"5"},{date:"1",val:"5"},{date:"2",val:"5"}]},{sensorRecord : [{date:"0",val:"10"},{date:"1",val:"9"},{date:"2",val:"8"}]},{sensorRecord : [{date:"0",val:"10"},{date:"1",val:"9"},{date:"2",val:"8"}]}
-		]
-  	*/
-  </script>
-</body>
+        <footer>
+            <p>&copy; Copyright by Evann</p>
+        </footer>
+        <script>var currentContainer = {timeViz : document.getElementById("graph")}</script>
+        <script src="timeVizExample.js"></script>
+    </body>
 </html>
