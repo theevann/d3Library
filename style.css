@@ -3,11 +3,11 @@
 }
 
 #header {
-    width:98%;
+    width:99%;
     margin:auto;
     background-color : white;
     border-radius: 10px;
-	box-shadow: 3px 3px 6px 0 #A9A9A9;
+	box-shadow: 1px 1px 3px 2px #A9A9A9;
     height : 80px;
     font-size : 2.5em;
     text-align : center;
@@ -35,6 +35,10 @@
     padding : 0.5%;
     border-radius: 10px;
 	box-shadow: 1px 1px 3px 2px #A9A9A9;
+}
+
+.section:hover {
+    box-shadow: 3px 3px 6px 4px #A9A9A9;
 }
 
 .graph {
