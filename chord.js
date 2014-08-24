@@ -39,7 +39,6 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
     //Function to plot the chart - Public
     chord.prototype.createVisualization = function () {
         var that = this;
-        console.log("create");
         // Add an SVG element with the desired dimensions and margin.
         that.container.selectAll('svg').remove();
         that.innerContainer = that.container.append('svg:svg')
