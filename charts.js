@@ -37,11 +37,11 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
                 return d[0];
             });
         })];
-        
+
         //So that the curves do not touch the border
         yExt[0] -= 0.1 * (yExt[1] - yExt[0]);
-        yExt[1] += 0.1 * (yExt[1] - yExt[0]);     
-   
+        yExt[1] += 0.1 * (yExt[1] - yExt[0]);
+
         //Optional arguments
         that.grid = args.grid || false;
         that.showGuideLine = args.guideLine || false;
@@ -94,6 +94,11 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
         that.x = d3.scale.linear().domain(xExt).range([0, that.width]);
         that.y = d3.scale.linear().domain(that.yExtent).range([that.height, 0]);
 
+        that.zoom = d3.behavior.zoom()
+            .x(that.x)
+            .y(that.y)
+            .on("zoom", that.zoomed.bind(that));
+
         that.line = d3.svg.line()
             .x(function (d) {
                 return that.x(d[0]);
@@ -106,7 +111,7 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
             .x(function (d) {
                 return that.x(d[0]);
             })
-            .y0(Math.min(that.y(0), that.height))
+            .y0(function (d) {return Math.min(that.y(0), that.height);})
             .y1(function (d) {
                 return that.y(d[1]);
             });
@@ -144,24 +149,26 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
             .attr('height', that.height)
             .attr('fill', 'none');
 
-        that.graphs = that.graph.append('g').attr('id', 'graphs').style('pointer-events', 'none');
-        that.series.forEach(function (d, i) {
-            if (that.fill[i]) {
-                that.area.interpolate(that.interpolate[i]);
-                that.graphs.append('svg:path').classed('area', true)
-                    .attr('d', that.area(d.data))
-                    .style('pointer-events', 'none')
-                    .style('fill', that.color[i]);
-            }
-        });
+        if (that.zoomable) {
+            that.overlay.call(that.zoom);
+        }
 
-        that.series.forEach(function (d, i) {
-            that.line.interpolate(that.interpolate[i]);
-            that.graphs.append('svg:path').classed('line', true)
-                .attr('d', that.line(d.data))
-                .style('stroke', that.fillColor[i])
-                .style('stroke-width', that.strokeWidth[i]);
-        });
+        that.graphs = that.graph.append('g').attr('id', 'graphs').style('pointer-events', 'none');
+
+        that.graphs.selectAll('path.area').data(that.series).enter()
+            .append('svg:path')
+            .filter( function (d, i) {return that.fill[i];})
+            .classed('area', true)
+            .attr('d', function (d, i) {return that.area.interpolate(that.interpolate[i])(d.data);})
+            .style('pointer-events', 'none')
+            .style('fill', function (d, i) {return that.fillColor[i];});
+
+        that.graphs.selectAll('path.line').data(that.series).enter()
+            .append('path')
+            .classed('line', true)
+            .attr('d', function (d, i) {return that.line.interpolate(that.interpolate[i])(d.data);})
+            .style('stroke', function (d, i) {return that.color[i];})
+            .style('stroke-width', function (d, i) {return that.strokeWidth[i];});
 
         that.graphs.selectAll('.area')
             .style('stroke', 'none')
@@ -170,22 +177,55 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
         that.graphs.selectAll('.line')
             .style('fill', 'none');
 
-        var xAxis = d3.svg.axis().scale(that.x).tickSubdivide(true);
+        //Hidders to show only the graph
+
+        that.graph.append('rect')
+            .attr('class', 'hidder')
+            .attr('width', that.width + that.margin[1] + that.margin[3] + 1)
+            .attr('height', that.margin[0])
+            .attr('y', -that.margin[0])
+            .attr('x', -that.margin[3])
+            .attr('fill', 'white');
+
+        that.graph.append('rect')
+            .attr('class', 'hidder')
+            .attr('width', that.margin[1] + 1)
+            .attr('height', that.height)
+            .attr('x', that.width)
+            .attr('fill', 'white');
+
+        that.graph.append('rect')
+            .attr('class', 'hidder')
+            .attr('width', that.width + that.margin[1] + that.margin[3])
+            .attr('height', that.margin[2])
+            .attr('y', that.height)
+            .attr('x', -that.margin[3])
+            .attr('fill', 'white');
+
+        that.graph.append('rect')
+            .attr('class', 'hidder')
+            .attr('width', that.margin[3])
+            .attr('height', that.height)
+            .attr('x', -that.margin[3] )
+            .attr('fill', 'white');
+
+
+        that.xAxis = d3.svg.axis().scale(that.x).tickSubdivide(true);
         that.graph.append('svg:g')
             .attr('class', 'x axis')
             .attr('transform', 'translate(0,' + that.height + ')')
-            .call(xAxis);
+            .call(that.xAxis);
 
-        var yAxisLeft = d3.svg.axis().scale(that.y).orient('left');
+        that.yAxisLeft = d3.svg.axis().scale(that.y).orient('left');
         that.graph.append('svg:g')
             .attr('class', 'y axis')
-            .call(yAxisLeft);
+            .call(that.yAxisLeft);
 
         d3.selectAll('.axis line, .axis path')
             .style('stroke', '#000')
             .style('fill', 'none');
-            
-        d3.selectAll(".axis text").style("font","11px sans-serif");
+
+        d3.selectAll('.axis text').style('font', '11px sans-serif');
 
         d3.selectAll('.axis')
             .style('shape-rendering', 'crispEdges');
@@ -269,6 +309,19 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
         this.serieFollowed = serieNumber;
     };
 
+    chart.prototype.zoomed = function () {
+        var that = this;
+        that.graph.select(".x.axis").call(that.xAxis);
+        that.graph.select(".y.axis").call(that.yAxisLeft);
+        that.graph.selectAll('.axis text').style('font', '11px sans-serif');
+        displayGrid.call(that);
+        that.graphs.selectAll('path.area')
+            .attr('d', function (d, i) {return that.area.interpolate(that.interpolate[i])(d.data);});
+        that.graphs.selectAll('path.line')
+            .attr('d', function (d, i) {return that.line.interpolate(that.interpolate[i])(d.data);});
+        updateGuideLine.call(that);
+    };
+
     var displayGrid = function () {
         var that = this;
         var xGrid = d3.svg.axis().scale(that.x).tickSize(-that.height).tickSubdivide(true).tickFormat(function () {
@@ -278,20 +331,24 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
             return '';
         });
 
-        var g = that.graph.append('svg:g').attr('id', 'grid');
+        that.graph.selectAll('#grid').remove();
+        var g = that.graph.append('svg:g').attr('id', 'grid').style('pointer-events', 'none');
 
         g.append('g')
             .attr('class', 'x grid')
             .attr('transform', 'translate(0,' + that.height + ')')
             .call(xGrid)
+            .style('pointer-events', 'none')
             .style('fill', 'none');
 
         g.append('g')
             .attr('class', 'y grid')
             .call(yGrid)
+            .style('pointer-events', 'none')
             .style('fill', 'none');
 
         g.selectAll('line')
+            .style('pointer-events', 'none')
             .style('fill', 'none')
             .style('stroke', 'lightgrey')
             .style('stroke-width', 1)
@@ -353,7 +410,8 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
             .attr('y', function (d, i) {
                 return that.y(dd[i][1]);
             })
-            .attr('dx', 10)
+            .attr('dx', function () {return that.width - +d3.select(this).attr('x') > 40 ? 10 : -10;})
+            .attr('text-anchor', function () {return that.width - +d3.select(this).attr('x') > 40 ? 'start' : 'end';})
             .text(function (d, i) {
                 return d3.format(',.2f')(dd[i][1]);
             });
