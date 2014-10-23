@@ -1,4 +1,4 @@
-﻿//(function(){
+//(function(){
     var current = 70;
     var myData = [
                 {
