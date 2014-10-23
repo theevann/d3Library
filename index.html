@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>D3 Library</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" type="text/css" href="style.css" />
+        <script src="d3/d3.min.js"></script>
+        <script>window.d3 || document.write('<script src="http://d3js.org/d3.v3.min.js"><\/script>')</script>
+    </head>
+    <body> 
+        <div id="wrapper" style="">
+        <div id="header">D3 Library</div>
+        </div>    
+        
+        <script>
+            var currentContainer = {};
+            (function () {
+                var currentGraph, tempDiv,
+                    graphs = ["charts","tree","sunburst","chord", "timeViz"],
+                    wrapper = document.getElementById('wrapper');
+                
+                graphs.forEach( function (d) {
+                    currentGraph = document.createElement('div');
+                    currentGraph.className = 'section';
+                    tempDiv = document.createElement('div');
+                    tempDiv.className = 'explanation';
+                    currentGraph.appendChild(tempDiv);
+                    tempDiv = document.createElement('div');
+                    tempDiv.className = 'graph';
+                    currentGraph.appendChild(tempDiv);
+                    wrapper.appendChild(currentGraph);
+                    currentContainer[d] = tempDiv;
+                    document.write('<script src="' + d + '.js"><\/script>')
+                    document.write('<script src="' + d + 'Example.js"><\/script>')
+                    
+                });
+            })();
+	    </script>
+    </body>
+</html>
