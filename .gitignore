@@ -1,0 +1,21 @@
+# Shortcut => GIT CONSOLE
+*.exe
+*.lnk
+
+# Test with notepad
+new*
+
+#Cloud9
+.c9
+
+#Eclipse
+*.project
+
+#Others
+wikiMap
+
+#d3 for testing
+d3
+
+#namer and default
+helper
