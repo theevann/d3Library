@@ -8,7 +8,7 @@
     background-color : white;
     border-radius: 10px;
 	box-shadow: 1px 1px 3px 2px #A9A9A9;
-    height : 80px;
+    height : 8%;
     font-size : 2.5em;
     text-align : center;
     line-height : 80px;
@@ -30,7 +30,7 @@
     float : left;
     width : 49%;
     margin: 0.5%;
-    height: 300px;
+    height: 200px;
     overflow: hidden;
     padding : 0.5%;
     border-radius: 10px;
