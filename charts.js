@@ -3,7 +3,8 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 (function () {
     'use strict';
 	
-    var bisect = d3.bisector(function (d) {
+	var idGraphs = 0,
+		bisect = d3.bisector(function (d) {
             return d[0];
         }).left,
         colors = d3.scale.category10();
@@ -17,20 +18,22 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 		
 		that._ = {};
 		that.twoSeries = false;
+		that.idGraph = idGraphs++;
 
         //Required arguments
-		if (args.container.nodeName === 'g') {
+		if (args.container.nodeName === 'g' || args.container.nodeName === 'G') {
 			that.containerGroup = d3.select(args.container);
 		} else {
 			that.container = d3.select(args.container);
 		}
         that.series = args.series;
-        that.series.forEach(function (d) {
+        that.series.forEach(function (d, i) {
 			if (!d.serieId) {
 				d.serieId = 0;
 			} else if (d.serieId === 1) {
 				that.twoSeries = true;
 			}
+			d.id = i;
 		});
 
         that.seriesLength = that.series.length;
@@ -64,20 +67,31 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 
         //Optional arguments
         that.showGuideLine = args.guideLine || false;
-        that.showLegend = args.showLegend || false;
         that.highlight = args.highlight || false;
+        that.showLegend = args.showLegend || false;
+		that.legendPosition = args.legendPosition || [true, 0];
+		that.limitRowLegend = args.limitRowLegend || 0;
 		that.optimizeYScale = args.optimizeYScale === false ? false : true;
         m = that.margin = args.margin || [0.05, 0.05, 0.05, 0.05, true]; // [Top, Right, Bottom, Left, proportional]
         that.serieFollowed = args.serieFollowed || -1;
-		that.parseTime = args.parseTime || false;
-		that.legendPosition = args.legendPosition || [0.8, 0];
+		that.autoParseTime = args.autoParseTime || false;
 		that.transitionDuration = args.transitionDuration || 100;
+		that.name = args.name;
 		
 		that.fontFamily = args.fontFamily || "sans-serif";
         that.fontSize = args.fontSize || 11;
 		that.axisColor = args.axisColor || "black";
         that.zoomable = args.zoomable || false;
-
+		that.onZoom = args.onZoom || function () {};
+		
+		args.nameInBackground = args.nameInBackground || {};
+		that.nameInBackground = {
+			show : args.nameInBackground.show || false,
+			fontColor : args.nameInBackground.fontColor || "lightgrey",
+			fontSize : args.nameInBackground.fontSize || that.fontSize * 3,
+			fontFamily : args.nameInBackground.fontFamily || that.fontFamily
+		};
+		
         args.grid = args.grid || {};
 		that.grid = {
 			show : args.grid.show || false,
@@ -94,7 +108,8 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 			tickSize : args.x.tickSize || args.tickSize || [6,6],
 			textTickOffset : args.x.textTickOffset || [false, false],
 			label : args.x.label || "",
-			labelPosition : args.x.labelPosition || "out"
+			labelPosition : args.x.labelPosition || "out",
+			guideLineFormat : args.x.guideLineFormat || function (d) {return d;},
 		};
 		
 		args.y = args.y || {};
@@ -124,12 +139,22 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 
         //So that the curves do not touch the border
 		if (that.optimizeYScale) {
-			yLeftExt[0] -= 0.1 * (yLeftExt[1] - yLeftExt[0]);
-			yLeftExt[1] += 0.1 * (yLeftExt[1] - yLeftExt[0]);
+			that.y.left.extent[0] -= 0.1 * (that.y.left.extent[1] - that.y.left.extent[0]);
+			that.y.left.extent[1] += 0.1 * (that.y.left.extent[1] - that.y.left.extent[0]);
 			if (that.twoSeries) {
-				yRightExt[0] -= 0.1 * (yRightExt[1] - yRightExt[0]);
-				yRightExt[1] += 0.1 * (yRightExt[1] - yRightExt[0]);
+				that.y.right.extent[0] -= 0.1 * (that.y.left.extent[1] - that.y.left.extent[0]);
+				that.y.right.extent[1] += 0.1 * (that.y.left.extent[1] - that.y.left.extent[0]);
 			}
+		}
+		
+		if (that.y.left.extent[0] === that.y.left.extent[1]) {
+			that.y.left.extent[0] -= 1;
+			that.y.left.extent[1] += 1;
+		}
+		
+		if (that.y.right.extent[0] === that.y.right.extent[1]) {
+			that.y.right.extent[0] -= 1;
+			that.y.right.extent[1] += 1;
 		}
 		
 		var mapper = function (attr, def) {
@@ -139,14 +164,17 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 		};
 		
         that.fill = mapper("fill", false);
+        that.visibility = mapper("visibility", "show");
         that.sort = mapper("sort", false);
         that.strokeWidth = mapper("strokeWidth", 2);
         that.opacity = mapper("opacity", 1);
         that.interpolate = mapper("interpolate", "linear");
         that.color = mapper("color", function (d, i) {return colors(i % 10);});
         that.fillColor = mapper("fillColor", function (d, i) {return that.color[i];});
-        that.label = mapper("label", function (d, i) {return ('Serie ' + i);});
-
+        that.label = mapper("label", function (d, i) {return ('Graph ' + i);});
+		that.guideLineInitiated = false;
+		
+		
         //Computed attributes
         that.containerWidth = args.width || parseFloat(that.container.style('width'));
         that.containerHeight = args.height || parseFloat(that.container.style('height'));
@@ -162,7 +190,7 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
             throw 'No dimension set to container';
         }
 		
-		if (that.parseTime) {
+		if (that.autoParseTime) {
 			that.x.scale = d3.time.scale().domain(that.x.extent).range([0, that.width]);
 		} else {
 			that.x.scale = d3.scale.linear().domain(that.x.extent).range([0, that.width]);
@@ -177,6 +205,7 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
         that.zoom = d3.behavior.zoom()
             .x(that.x.scale)
             .y(that.y.left.scale)
+			.on("zoomend", that.onZoom.bind(that))
             .on("zoom", function () {
 				var upYScale = that._.initialScale.invert(-d3.event.translate[1] / d3.event.scale),
 					downYScale = upYScale - that._.initialExtent / d3.event.scale;
@@ -256,7 +285,7 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 	// Append clipPath to restrain graph to the center rectangle
 		
         that.graph.append("clipPath")
-			.attr("id", "clip")
+			.attr("id", "clip-" + that.idGraph)
 			.append('rect')
             .attr('width', that.width)
             .attr('height', that.height);
@@ -264,7 +293,7 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 	//Append overlay to receive mouse events
 		
 		that.overlay = that.graph.append('rect')
-            .attr('id', 'overlay')
+            .attr('id', 'overlay-' + that.idGraph)
             .attr('width', that.width)
             .attr('height', that.height)
             .attr('fill', 'none')
@@ -273,30 +302,43 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
         if (that.zoomable) {
             that.overlay.call(that.zoom);
         }
-
-        that.graphs = that.graph.append('g').attr('id', 'graphs').style('pointer-events', 'none').attr("clip-path", "url(#clip)");
-		
+	
+	// Put Name In background
+	
+		if (that.nameInBackground.show) {
+			that.graph
+				.append("text")
+				.classed("background", true)
+				.attr('transform', 'translate(' + that.width / 2 + ',' + that.height / 2 + ')')
+				.style('text-anchor', 'middle')
+				.style('dominant-baseline', 'middle')
+				.style('fill', that.nameInBackground.fontColor)
+				.text(that.name);
+		}
+	
+        that.graphs = that.graph.append('g').attr('class', 'graphs').style('pointer-events', 'none').attr("clip-path", "url(#clip-" + that.idGraph + ")");
+	
 	// Create Charts lines and areas
-		
-		var getSide = (function (i) {return that.series[i].serieId === 0 ? "left" : "right"});
-
-        that.graphs.selectAll('path.area').data(that.series).enter()
+				
+        that.graphs.selectAll('path.area').data(that.series, function (d) {return d.id;}).enter()
             .append('svg:path')
             .filter( function (d, i) {return that.fill[i];})
             .classed('area', true)
             .attr('number', function (d, i) {return i;})
-            .attr('d', function (d, i) {return that.y[getSide(i)].area.interpolate(that.interpolate[i])(d.data);})
+            .attr('d', function (d, i) {return that.y[getSide.call(that, i)].area.interpolate(that.interpolate[i])(d.data);})
             .style('pointer-events', 'none')
-            .style('fill', function (d, i) {return that.fillColor[i];});
-
-        that.graphs.selectAll('path.line').data(that.series).enter()
+            .style('fill', function (d, i) {return that.fillColor[i];})
+			.style("display", function (d, i) {return that.visibility[i] === "hide" ? "none" : "";});
+			
+        that.graphs.selectAll('path.line').data(that.series, function (d) {return d.id;}).enter()
             .append('path')
             .classed('line', true)
             .attr('number', function (d, i) {return i;})
-            .attr('d', function (d, i) {return that.y[getSide(i)].line.interpolate(that.interpolate[i])(d.data);})
+            .attr('d', function (d, i) {return that.y[getSide.call(that, i)].line.interpolate(that.interpolate[i])(d.data);})
             .style('opacity', function (d, i) {return that.opacity[i];})
             .style('stroke', function (d, i) {return that.color[i];})
-            .style('stroke-width', function (d, i) {return that.strokeWidth[i];});
+            .style('stroke-width', function (d, i) {return that.strokeWidth[i];})
+			.style("display", function (d, i) {return that.visibility[i] === "hide" ? "none" : "";});
 
         that.graphs.selectAll('.area')
             .style('stroke', 'none')
@@ -304,6 +346,8 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 
         that.graphs.selectAll('.line')
             .style('fill', 'none');
+		
+		 that.graphs.selectAll('.area')
 		
 	// Create Axis
 		
@@ -386,7 +430,7 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 			rotate = 0;
 			textAnchor = that.y.left.labelPosition === "right" ? 'start' : 'middle';
 			labelPosition[0] = that.x.labelPosition === "in" ? (that.width / 2) : that.x.labelPosition === "right" ? that.width : (that.width / 2);
-			labelPosition[1] = that.height + (that.x.labelPosition === "in" ? (- 15) : that.x.labelPosition === "right" ? 0 : (that.margin[2] * 0.7));
+			labelPosition[1] = that.height + (that.x.labelPosition === "in" ? (-5) : that.x.labelPosition === "right" ? 0 : (that.margin[2] * 0.7));
 		}
 		
 		that.graph.append("text")
@@ -424,7 +468,7 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 			} else {
 				rotate = that.y.right.labelPosition === "top" ? 0 : -90;
 				textAnchor = 'middle';
-				labelPosition[0] = that.width - that.y.right.labelPosition === "in" ? 15 : that.y.right.labelPosition === "top" ? 0 : (-that.margin[3] * 0.7);
+				labelPosition[0] = that.width - (that.y.right.labelPosition === "in" ? 15 : that.y.right.labelPosition === "top" ? 0 : (-that.margin[3] * 0.7));
 				labelPosition[1] = that.y.right.labelPosition === "in" ? (that.height / 2) : that.y.right.labelPosition === "top" ? -10 : (that.height / 2);
 			}
 			
@@ -439,41 +483,49 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 		
 		if (that.showLegend) {
 			var style = that.fontSize + 'px ' + that.fontFamily,
-				dataLegend = that.label.map(function (d, i) {return [d, that.color[i], getTextHeight(d, style), getTextWidth(d, style)]; }),
-				maxH = d3.max(dataLegend, function (d) {return d[2];}), // -1 => getTextHeight inaccurate
-				maxW = d3.max(dataLegend, function (d) {return d[3];}),
-				maxOnColumn = ~~(that.height / maxH),
+				dataLegend = that.label.map(function (d, i) {return [d, that.color[i], that.visibility[i], getTextHeight(d, style), getTextWidth(d, style)]; }),
+				maxH = d3.max(dataLegend, function (d) {return d[3];}), // -1 => getTextHeight inaccurate
+				maxW = d3.max(dataLegend, function (d) {return d[4];}),
+				maxOnColumn = ~~that.limitRowLegend || ~~(that.height * (1 - that.legendPosition[1]) / maxH),
+				numberOfColumn = Math.ceil(dataLegend.length / maxOnColumn),
 				lineSize = 15,
 				textOffset = 5;
+			
+			if (that.legendPosition[0] === true) {
+				that.legendPosition[0] = 1 - (numberOfColumn * (maxW + lineSize + 2 * textOffset) / that.width);
+			}
 				
 			var gLegend = that.graph.append("g")
-				.attr("id", "chart-legend")
+				.attr("id", "chart-legend-" + that.idGraph)
+				.attr("class", "chart-legend-" + that.idGraph)
 				.attr("transform", "translate(" + [that.width * that.legendPosition[0], that.height * that.legendPosition[1]] + ")")
 				.selectAll("g")
 				.data(dataLegend)
 				.enter()
 				.append("g")
-				.attr("transform", function (d,i) { return "translate(" + [~~(i / maxOnColumn) * (maxW + lineSize + textOffset), (i % maxOnColumn) * (maxH)] + ")"; });
+				.attr("transform", function (d,i) { return "translate(" + [~~(i / maxOnColumn) * (maxW + lineSize + 2 * textOffset), (i % maxOnColumn) * (maxH)] + ")"; });
 					
 			gLegend
-				.append("line")
-				.attr('x1', 0)
-				.attr('y1', (maxH) / 2 + 4) // +4 For strokeWidth
-				.attr('x2', lineSize)
-				.attr('y2', (maxH) / 2 + 4) // +4 For strokeWidth
+				.append("rect")
+				.attr('x', 0)
+				.attr('y', (maxH) / 2) // +4 For strokeWidth
+				.attr('width', lineSize)
+				.attr('height', (maxH) / 2) // +4 For strokeWidth
+				.attr('fill', function (d) {return d[2] !== "hide" ? d[1] : "none";})
 				.attr('stroke', function (d) {return d[1];})
 				.attr('stroke-width', 2);
 			
 			gLegend
 				.append("text")
 				.attr('x', lineSize + textOffset)
-				.attr('y', function (d) {return (maxH) / 2 + d[2] / 2;})
+				.attr('y', function (d) {return (maxH) / 2 + d[3] / 2;})
 				.attr('fill', function (d) {return d[1];})
 				.text(function (d) {return d[0];});
 				
 		}
 		
-		that.graph.selectAll("text").style('font', that.fontSize + 'px ' + that.fontFamily);
+		that.graph.selectAll("text").style('font', that.fontSize + 'px ' + that.fontFamily).style('pointer-events', 'none');
+		that.graph.selectAll("text.background").style('font', that.nameInBackground.fontSize + 'px ' + that.nameInBackground.fontFamily);
 		
         if (that.showGuideLine) {
             that.initGuideLine();
@@ -483,7 +535,146 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
             that.initHightligth();
         }
     };
+		
+    chart.prototype.initGuideLine = function () {
+        var that = this,
+			heightText = getTextHeight('0',  that.fontSize + 'px ' + that.fontFamily);
+
+        that.helpGroup = that.graph.append('g').attr('id', 'helpGroup-' + that.idGraph).style('display', 'none').attr("clip-path", "url(#clip-" + that.idGraph + ")");
+
+        that.guideLine = that.helpGroup.append('line')
+            .attr('class', 'guideline')
+            .attr('x1', 0)
+            .attr('y1', 0)
+            .attr('x2', 0)
+            .attr('y2', that.height)
+            .style('pointer-events', 'none')
+            .style('fill', 'none')
+            .style('stroke', 'lightgrey')
+            .style('stroke-width', 2);
+		
+		//Time Group
+		
+		that.timeGroup = that.helpGroup.append("g")
+			.classed("time", true);
+			
+		that.timeGroup.append("rect")
+			.attr('y', -(heightText + 4))
+			.attr('x', -2)
+			.attr('height', 2 + heightText)
+			.style('opacity', 0.65)
+			.style('fill', 'lightgrey')
+			.style('stroke', 'grey')
+			.style('stroke-width', 1)
+			.style('pointer-events', 'none');
+		
+		that.timeGroup.append('text').attr('y', -6).style('font',  that.fontSize + 'px ' + that.fontFamily).style('fill', that.axisColor).style('pointer-events', 'none');
+
+		// Values groups
+		
+        that.helpGroups = that.helpGroup.selectAll("g.helpGroup")
+			.data(d3.range(that.seriesLength))
+			.enter()
+			.append("g")
+			.classed("helpGroup", true);
+		
+		that.helpGroups.append('rect')
+			.classed('textbg', true)
+			.style('opacity', 0.65)
+			.style('fill', 'lightgrey')
+			.style('stroke', 'grey')
+			.style('stroke-width', 1)
+			.style('pointer-events', 'none')
+			.attr('x', 10)
+			.attr('y', -heightText)
+			.attr('height', 4 + heightText);
+
+		that.helpGroups.append('text').style('font',  that.fontSize + 'px ' + that.fontFamily).style('fill', that.axisColor).style('pointer-events', 'none');
+		
+		that.helpGroups.append('circle')
+			.attr('class', 'guideline')
+			.attr('cx', 0)
+			.attr('cy', 0)
+			.attr('r', 5)
+			.style('pointer-events', 'none')
+			.style('fill', 'none')
+			.style('stroke', function (d,i) {return that.color[i];})
+			.style('stroke-width', 1);
+
+        that.overlay
+            .on('mouseover', function () {
+                 that.showGuideLine ? that.helpGroup.style('display', null) : "";
+            })
+            .on('mouseout', function () {
+                //If the focus is taken by a line => it means we didn't go out of the graph
+                if (d3.select(d3.event.toElement).node() && !d3.select(d3.event.toElement).classed('line'))
+                    that.helpGroup.style('display', 'none');
+            })
+            .on('mousemove', function () { that.showGuideLine ? updateGuideLine.call(that) : ""; });
+		
+		that.guideLineInitiated = true;
+    };
 	
+	chart.prototype.toggleGuideLine = function (state) {
+		var that = this;
+		that.showGuideLine = state || !that.showGuideLine;
+		
+		if (!that.showGuideLine && that.guideLineInitiated) {
+			that.helpGroup.style('display', 'none');
+		} else if (that.showGuideLine && !that.guideLineInitiated) {
+			that.initGuideLine();
+		} else if (that.showGuideLine && that.guideLineInitiated) {
+			that.helpGroup.style('display', '');
+		}
+	};
+
+    chart.prototype.initHightligth = function () {
+        var that = this,
+            mouseover,
+            mouseout;
+
+        mouseover = function (i) {
+            that.graph.selectAll('#chart-legend-' + that.idGraph + ' text').filter(function (d) {return d === i;}).style('text-decoration', "underline");
+			that.graphs.selectAll('.line').style('opacity', function (d, i) { return that.opacity[i] / 2;});
+			d3.select(this).style('stroke-width', (that.strokeWidth[i] * 1.5)).style('opacity', 1);
+			if (that.visibility[i] === "hide") {
+				that.dash(i);
+			}
+			that.showGuideLine ? updateGuideLine.call(that) : "";
+        };
+
+        mouseout = function (i) {
+			that.graph.selectAll('#chart-legend-' + that.idGraph + ' text').filter(function (d) {return d === i;}).style('text-decoration', "none");
+				that.graphs.selectAll('.line').style('opacity', function (d, i) { return that.opacity[i];});
+				d3.select(this).style('stroke-width', that.strokeWidth[i]).style('opacity', that.opacity[i]);
+				that.showGuideLine ? updateGuideLine.call(that) : "";
+			if (that.visibility[i] === "dashed") {
+				that.hide(i);
+			}
+        };
+
+        that.graphs.selectAll('.line')
+            .style('pointer-events', 'stroke')
+			.on('click', function (d, i) { that.visibility[i] === "show" ? that.hide(i) : that.show(i);})
+            .on('mouseover', function (d, i) { return mouseover.call(this, i);})
+            .on('mouseout', function (d, i) { return mouseout.call(this, i);})
+            .on('mousemove', that.showGuideLine ? updateGuideLine.bind(that) : "");
+		
+		that.graph.select('#chart-legend-' + that.idGraph).selectAll("text").data(d3.range(that.seriesLength))
+			.style('pointer-events', 'stroke')
+			.style('cursor', 'pointer')
+			.on('click', function (i) { that.visibility[i] === "show" ? that.hide(i) : that.show(i);})
+            .on('mouseover', function (i) { var ctx = that.graphs.select('.line[number="' + i + '"]').node(); mouseover.call(ctx, i);})
+            .on('mouseout', function (i) { var ctx = that.graphs.select('.line[number="' + i + '"]').node(); mouseout.call(ctx, i);});
+			
+		that.graph.select('#chart-legend-' + that.idGraph).selectAll("rect").data(d3.range(that.seriesLength))
+			.style('pointer-events', 'all')
+			.style('cursor', 'pointer')
+            .on('click', function (i) { that.visibility[i] === "show" ? that.hide(i) : that.show(i);})
+            .on('mouseover', function (i) { var ctx = that.graphs.select('.line[number="' + i + '"]').node(); mouseover.call(ctx, i);})
+            .on('mouseout', function (i) { var ctx = that.graphs.select('.line[number="' + i + '"]').node(); mouseout.call(ctx, i);});
+    };
+
 	chart.prototype.addPointsAt = function (xValue, yValues, rescaleX, rescaleY, scalingMethod) {
 		var that = this,
 			bisect = d3.bisector(function(d) { return d[0]; }).left,
@@ -503,7 +694,7 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
         });
 		
 		if (rescaleX || rescaleY) {
-			that.rescale(rescaleX, rescaleY, scalingMethod);
+			that.rescale(rescaleX, rescaleY, rescaleY, scalingMethod);
 		}
 	};
 	
@@ -525,7 +716,7 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 		
 		
 		if (rescaleX || rescaleY) {
-			that.rescale(rescaleX, rescaleY, scalingMethod);
+			that.rescale(rescaleX, rescaleY, rescaleY, scalingMethod);
 		}
 	};
 	
@@ -545,7 +736,7 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 		});
 		
 		if (rescaleX || rescaleY) {
-			that.rescale(rescaleX, rescaleY, scalingMethod);
+			that.rescale(rescaleX, rescaleY, rescaleY, scalingMethod);
 		}
 		
 		return removedValues;
@@ -557,67 +748,68 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 		});
 	};
 	
-	chart.prototype.rescale = function (x, y, scalingMethod) {
+	chart.prototype.rescale = function (x, y1, y2, scalingMethod) {
 		x = x === undefined ? true : x;
-		y = y === undefined ? true : y;
+		y1 = y1 === undefined ? true : y1;
+		y2 = y2 === undefined ? true : y2;
 		var that = this,
 			currentExtent,
 			scalingMethod = scalingMethod || "fit",
 			rx1 = (x === true || (x && x[0]) === true) ?  true : (x && x[0]) === false ? that.x.extent[0] : x[0],
 			rx2 = (x === true || (x && x[1]) === true) ?  true : (x && x[1]) === false ? that.x.extent[1] : x[1],
-			ryl1 = (y === true || (y && y[0]) === true) ?  true : (y && y[0]) === false ? that.y.left.extent[0] : y[0],
-			ryl2 = (y === true || (y && y[1]) === true) ?  true : (y && y[1]) === false ? that.y.left.extent[1] : y[1];
-			ryr1 = (y === true || (y && y[0]) === true) ?  true : (y && y[0]) === false ? that.y.right.extent[0] : y[0],
-			ryr2 = (y === true || (y && y[1]) === true) ?  true : (y && y[1]) === false ? that.y.right.extent[1] : y[1];
+			ryl1 = (y1 === true || (y1 && y1[0]) === true) ?  true : (y1 && y1[0]) === false ? that.y.left.extent[0] : y1[0],
+			ryl2 = (y1 === true || (y1 && y1[1]) === true) ?  true : (y1 && y1[1]) === false ? that.y.left.extent[1] : y1[1],
+			ryr1 = (y2 === true || (y2 && y2[0]) === true) ?  true : (y2 && y2[0]) === false ? that.y.right.extent[0] : y2[0],
+			ryr2 = (y2 === true || (y2 && y2[1]) === true) ?  true : (y2 && y2[1]) === false ? that.y.right.extent[1] : y2[1];
 		
-		if (y) {
-			currentExtent = [d3.min(that.series.filter(function (d) {return d.serieId === 0;}), function (d) {
+		if (y1) {
+			currentExtent = [d3.min(that.series.filter(function (d, i) {return d.serieId === 0 && that.visibility[i] !== "hide";}), function (d) {
 				return d3.min(d.data, function (d) {
 					return d[1];
 				});
-			}) || 0, d3.max(that.series.filter(function (d) {return d.serieId === 0;}), function (d) {
+			}) || 0, d3.max(that.series.filter(function (d, i) {return d.serieId === 0 && that.visibility[i] !== "hide";}), function (d) {
 				return d3.max(d.data, function (d) {
 					return d[1];
 				});
 			}) || 0];
 			
-			that.y.left.extent[0] = ry1 !== true ? ry1 : scalingMethod === "fit" ? currentExtent[0] : Math.min(currentExtent[0], that.y.left.extent[0]);
-			that.y.left.extent[1] = ry2 !== true ? ry2 : scalingMethod === "fit" ? currentExtent[1] : Math.max(currentExtent[1], that.y.left.extent[1]);
+			if (that.optimizeYScale) {
+				currentExtent[0] -= 0.1 * (currentExtent[1] - currentExtent[0]);
+				currentExtent[1] += 0.1 * (currentExtent[1] - currentExtent[0]);
+			}
+			
+			that.y.left.extent[0] = ryl1 !== true ? ryl1 : scalingMethod === "fit" ? currentExtent[0] : Math.min(currentExtent[0], that.y.left.extent[0]);
+			that.y.left.extent[1] = ryl2 !== true ? ryl2 : scalingMethod === "fit" ? currentExtent[1] : Math.max(currentExtent[1], that.y.left.extent[1]);
+		}
+		
+		if (y2 && that.twoSeries) {
+			currentExtent = [d3.min(that.series.filter(function (d, i) {return d.serieId === 1 && that.visibility[i] !== "hide";}), function (d) {
+				return d3.min(d.data, function (d) {
+					return d[1];
+				});
+			}) || 0, d3.max(that.series.filter(function (d, i) {return d.serieId === 1 && that.visibility[i] !== "hide";}), function (d) {
+				return d3.max(d.data, function (d) {
+					return d[1];
+				});
+			}) || 0];
 			
 			if (that.optimizeYScale) {
-				that.y.left.extent[0] -= 0.1 * (that.y.left.extent[1] - that.y.left.extent[0]);
-				that.y.left.extent[1] += 0.1 * (that.y.left.extent[1] - that.y.left.extent[0]);
+				currentExtent[0] -= 0.1 * (currentExtent[1] - currentExtent[0]);
+				currentExtent[1] += 0.1 * (currentExtent[1] - currentExtent[0]);
 			}
 			
-			if (that.twoSeries) {
-				currentExtent = [d3.min(that.series.filter(function (d) {return d.serieId === 1;}), function (d) {
-					return d3.min(d.data, function (d) {
-						return d[1];
-					});
-				}) || 0, d3.max(that.series.filter(function (d) {return d.serieId === 1;}), function (d) {
-					return d3.max(d.data, function (d) {
-						return d[1];
-					});
-				}) || 0];
-				
-				that.y.right.extent[0] = ry1 !== true ? ry1 : scalingMethod === "fit" ? currentExtent[0] : Math.min(currentExtent[0], that.y.right.extent[0]);
-				that.y.right.extent[1] = ry2 !== true ? ry2 : scalingMethod === "fit" ? currentExtent[1] : Math.max(currentExtent[1], that.y.right.extent[1]);
-				
-				if (that.optimizeYScale) {
-					that.y.right.extent[0] -= 0.1 * (that.y.left.extent[1] - that.y.left.extent[0]);
-					that.y.right.extent[1] += 0.1 * (that.y.left.extent[1] - that.y.left.extent[0]);
-				}
-			}
+			that.y.right.extent[0] = ryr1 !== true ? ryr1 : scalingMethod === "fit" ? currentExtent[0] : Math.min(currentExtent[0], that.y.right.extent[0]);
+			that.y.right.extent[1] = ryr2 !== true ? ryr2 : scalingMethod === "fit" ? currentExtent[1] : Math.max(currentExtent[1], that.y.right.extent[1]);
 		}
 		
 		if (x) {
 			currentExtent = [
-				d3.min(that.series, function (d) {
+				d3.min(that.series.filter(function (d, i) {return that.visibility[i] !== "hide";}), function (d) {
 					return d3.min(d.data, function (d) {
 						return d[0];
 					});
 				}),
-				d3.max(that.series, function (d) {
+				d3.max(that.series.filter(function (d, i) {return that.visibility[i] !== "hide";}), function (d) {
 					return d3.max(d.data, function (d) {
 						return d[0];
 					});
@@ -626,6 +818,16 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 			
 			that.x.extent[0] = rx1 !== true ? rx1 : scalingMethod === "fit" ? currentExtent[0] : Math.min(currentExtent[0], that.x.extent[0]);
 			that.x.extent[1] = rx2 !== true ? rx2 : scalingMethod === "fit" ? currentExtent[1] : Math.max(currentExtent[1], that.x.extent[1]);
+		}
+		
+		if (that.y.left.extent[0] === that.y.left.extent[1]) {
+			that.y.left.extent[0] -= 1;
+			that.y.left.extent[1] += 1;
+		}
+		
+		if (that.y.right.extent[0] === that.y.right.extent[1]) {
+			that.y.right.extent[0] -= 1;
+			that.y.right.extent[1] += 1;
 		}
 		
 		that.x.scale.domain(that.x.extent);
@@ -640,103 +842,60 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 			.x(that.x.scale)
 			.y(that.y.left.scale);
 	};
-
-    chart.prototype.initGuideLine = function () {
-        var that = this;
-
-        that.helpGroup = that.graph.append('g').attr('class', 'helpGroup').style('display', 'none');
-
-        that.guideLine = that.helpGroup.append('line')
-            .attr('id', 'guideline')
-            .attr('x1', 0)
-            .attr('y1', 0)
-            .attr('x2', 0)
-            .attr('y2', that.height)
-            .style('pointer-events', 'none')
-            .style('fill', 'none')
-            .style('stroke', 'lightgrey')
-            .style('stroke-width', 2);
-
-        that.helpGroups = that.helpGroup.selectAll("g.helpGroup")
-			.data(d3.range(that.seriesLength))
-			.enter()
-			.append("g")
-			.classed("helpGroup", true);
-		
-		that.helpGroups.append('rect')
-			.style('opacity', 0.65)
-			.style('fill', 'lightgrey')
-			.style('stroke', 'grey')
-			.style('stroke-width', 1)
-			.style('pointer-events', 'none')
-			.attr('x', 10)
-			.attr('y', function () {return  - getTextHeight('0', that.fontSize + 'px ' + that.fontFamily);})
-			.attr('height', function () {return 4 + getTextHeight('0',  that.fontSize + 'px ' + that.fontFamily);});
-
-		that.helpGroups.append('text').style('font',  that.fontSize + 'px ' + that.fontFamily).style('fill', that.axisColor).style('pointer-events', 'none');
-		
-		that.helpGroups.append('circle')
-			.attr('class', 'guideline')
-			.attr('cx', 0)
-			.attr('cy', 0)
-			.attr('r', 5)
-			.style('pointer-events', 'none')
-			.style('fill', 'none')
-			.style('stroke', function (d,i) {return that.color[i];})
-			.style('stroke-width', 1);
-
-        that.overlay
-            .on('mouseover', function () {
-                that.helpGroup.style('display', null);
-            })
-            .on('mouseout', function () {
-                //If the focus is taken by a line => it means we didn't go out of the graph
-                if (d3.select(d3.event.toElement).node() && !d3.select(d3.event.toElement).classed('line'))
-                    that.helpGroup.style('display', 'none');
-            })
-            .on('mousemove', updateGuideLine.bind(that));
-    };
-
-    chart.prototype.initHightligth = function () {
-        var that = this,
-            mouseover,
-            mouseout;
-
-        mouseover = function () {
-            var stw = parseInt(d3.select(this).style('stroke-width'), 10);
-            d3.select(this).style('stroke-width', (stw * 1.5)).style('opacity', 1);
-            that.showGuideLine ? updateGuideLine.call(that) : "";
-        };
-
-        mouseout = function (i) {
-            var stw = parseInt(d3.select(this).style('stroke-width'), 10);
-            d3.select(this).style('stroke-width', (stw / 1.5)).style('opacity', that.opacity[i]);
-            that.showGuideLine ? updateGuideLine.call(that) : "";
-        };
-
-        that.graphs.selectAll('.line')
-            .style('pointer-events', 'stroke')
-            .on('mouseover', mouseover)
-            .on('mouseout', function (d, i) { return mouseout.call(this, i);})
-            .on('mousemove', that.showGuideLine ? updateGuideLine.call(that) : "");
-		
-		that.graph.select('#chart-legend').selectAll("text").data(d3.range(that.seriesLength))
-			.style('pointer-events', 'stroke')
-			.style('cursor', 'pointer')
-            .on('mouseover', function (i) { var ctx = that.graphs.select('.line[number="' + i + '"]').node(); return mouseover.call(ctx);})
-            .on('mouseout', function (i) { var ctx = that.graphs.select('.line[number="' + i + '"]').node(); return mouseout.call(ctx, i);});
+	
+	chart.prototype.rezoom = function (zoom, translate) {
+		this.zoom
+			.scale(zoom)
+			.translate(translate);
 			
-		that.graph.select('#chart-legend').selectAll("line").data(d3.range(that.seriesLength))
-			.style('pointer-events', 'stroke')
-			.style('cursor', 'pointer')
-            .on('mouseover', function (i) { var ctx = that.graphs.select('.line[number="' + i + '"]').node(); return mouseover.call(ctx);})
-            .on('mouseout', function (i) { var ctx = that.graphs.select('.line[number="' + i + '"]').node(); return mouseout.call(ctx, i);});
-    };
+		var upYScale = this._.initialScale.invert(-translate[1] / zoom),
+			downYScale = upYScale - this._.initialExtent / zoom;
+		this.y.right.scale.domain([downYScale, upYScale]);
+	};
 
     chart.prototype.guideLineFollow = function (serieNumber) {
         this.serieFollowed = serieNumber;
     };
 
+	chart.prototype.show = function (serieNumber) {
+		var that = this;
+		this.visibility[serieNumber] = "show";
+		this.graph.selectAll('path.area').filter(function (d) {return d.id === serieNumber;}).style("display", "").classed("chart-hidden", false).attr('d', function (d) {return that.y[getSide.call(that, d.id)].area.interpolate(that.interpolate[d.id])(d.data);});
+		this.graph.selectAll('path.line').filter(function (d) {return d.id === serieNumber;}).style("display", "").style("stroke-dasharray", null).classed("chart-hidden", false).attr('d', function (d) {return that.y[getSide.call(that, d.id)].line.interpolate(that.interpolate[d.id])(d.data);});
+		this.graph.selectAll('#chart-legend-' + this.idGraph + ' rect').filter(function (d) {return d === serieNumber;}).style("fill", this.color[serieNumber])
+	};
+	
+	chart.prototype.dash = function (serieNumber) {
+		var that = this;
+		this.visibility[serieNumber] = "dashed";
+		this.graph.selectAll('path.area').filter(function (d) {return d.id === serieNumber;}).style("display", "").classed("chart-hidden", false).attr('d', function (d) {return that.y[getSide.call(that, d.id)].area.interpolate(that.interpolate[d.id])(d.data);});
+		this.graph.selectAll('path.line').filter(function (d) {return d.id === serieNumber;}).style("display", "").style("stroke-dasharray", "5,5").classed("chart-hidden", false).attr('d', function (d) {return that.y[getSide.call(that, d.id)].line.interpolate(that.interpolate[d.id])(d.data);});
+		this.graph.selectAll('#chart-legend-' + this.idGraph + ' rect').filter(function (d) {return d === serieNumber;}).style("fill", "none");
+	};
+	
+	chart.prototype.hide = function (serieNumber) {
+		this.visibility[serieNumber] = "hide";
+		this.graph.selectAll('path.area').filter(function (d) {return d.id === serieNumber;}).style("display", "none").classed("chart-hidden", true);
+		this.graph.selectAll('path.line').filter(function (d) {return d.id === serieNumber;}).style("display", "none").style("stroke-dasharray", null).classed("chart-hidden", true);
+		this.graph.selectAll('#chart-legend-' + this.idGraph + ' rect').filter(function (d) {return d === serieNumber;}).style("fill", "none");
+	};
+	
+	chart.prototype.showAll = function () {
+		var that = this;
+		this.visibility.forEach( function (d, i) { that.visibility[i] = "show"; });
+		this.graph.selectAll('path.area').style("display", "").classed("chart-hidden", false).attr('d', function (d) {return that.y[getSide.call(that, d.id)].area.interpolate(that.interpolate[d.id])(d.data);});
+		this.graph.selectAll('path.line').style("display", "").style("stroke-dasharray", null).classed("chart-hidden", false).attr('d', function (d) {return that.y[getSide.call(that, d.id)].line.interpolate(that.interpolate[d.id])(d.data);});
+		this.graph.selectAll('#chart-legend-' + that.idGraph + ' rect').style("fill", function (d) { return that.color[d]; }).style("stroke-dasharray", null);
+	};
+	
+	chart.prototype.hideAll = function () {
+		var that = this;
+		this.visibility.forEach( function (d, i) { that.visibility[i] = "hide"; });
+		this.graph.selectAll('path.area').style("display", "none").classed("chart-hidden", true);
+		this.graph.selectAll('path.line').style("display", "none").style("stroke-dasharray", null).classed("chart-hidden", true);
+		this.graph.selectAll('#chart-legend-' + that.idGraph + ' rect').style("fill", "none").style("stroke-dasharray", null);
+	};
+	
     chart.prototype.update = function (time, ease) {
         var that = this,
 			t = that.graph.transition().duration(time || 0).ease(ease || 'linear');
@@ -751,10 +910,9 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 		that.twoSeries ? t.selectAll('.y.axis.right text').attr('x', that.y.right.textTickOffset[0]).attr('y', that.y.right.textTickOffset[1]) : "";
 		t.selectAll('.axis line, .axis path').style('stroke', that.axisColor).style('fill', 'none');	
 		
-		var getSide = (function (i) {return that.series[i].serieId === 0 ? "left" : "right"});
-        t.selectAll('path.area').attr('d', function (d, i) {return that.y[getSide(i)].area.interpolate(that.interpolate[i])(d.data);});
-        t.selectAll('path.line').attr('d', function (d, i) {return that.y[getSide(i)].line.interpolate(that.interpolate[i])(d.data);});
-		
+        t.selectAll('path.area:not(.chart-hidden)').attr('d', function (d) {return that.y[getSide.call(that, d.id)].area.interpolate(that.interpolate[d.id])(d.data);});
+        t.selectAll('path.line:not(.chart-hidden)').attr('d', function (d) {return that.y[getSide.call(that, d.id)].line.interpolate(that.interpolate[d.id])(d.data);});
+
 		if (that.grid.show) {
 			updateGrid.call(that, time, ease);
 		}
@@ -837,9 +995,8 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
                 for (var i = 1; i < array.length; i++)
                     currentMin = array[i] < array[currentMin] ? i : currentMin;
                 return currentMin;
-            },
-			getSide = (function (i) {return that.series[i].serieId === 0 ? "left" : "right"});
-
+            };
+			
         var x0 = that.x.scale.invert(d3.mouse(that.graph.node())[0]),
             index = that.series.map(function (d) {
                 return bisect(d.data, x0, 1);
@@ -856,28 +1013,45 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
             serieFollowed = that.serieFollowed != -1 ? that.serieFollowed : min(dd.map(function (d, i) {
                 return Math.abs(x0 - dd[i][0]);
             }));
-
+		
+		var xValue = dd[serieFollowed][0];
+		
         that.guideLine
-            .attr('x1', that.x.scale(dd[serieFollowed][0]))
-            .attr('x2', that.x.scale(dd[serieFollowed][0]));
-
+            .attr('x1', that.x.scale(xValue))
+            .attr('x2', that.x.scale(xValue));
+		
+		// Time Group
+		
+		that.timeGroup.attr('transform', function (d, i) {
+				return 'translate(' + (that.x.scale(xValue) - getTextWidth(that.x.guideLineFormat(xValue), that.fontSize + 'px ' + that.fontFamily) / 2) + ', ' + that.height + ')';
+			})
+			.select("text")
+			.text(that.x.guideLineFormat(xValue));
+		
+		that.timeGroup
+			.select("rect")
+			.attr('width', 4 + getTextWidth(that.x.guideLineFormat(xValue), that.fontSize + 'px ' + that.fontFamily));
+		
+		// Values Group	
+			
         that.helpGroups
+			.style("display", function (d, i) {return that.visibility[i] === "hide" ? "none" : "";})
             .attr('transform', function (d, i) {
-                return 'translate(' + that.x.scale(dd[i][0]) + ', ' + that.y[getSide(i)].scale(dd[i][1]) + ')';
+                return 'translate(' + that.x.scale(dd[i][0]) + ', ' + that.y[getSide.call(that, i)].scale(dd[i][1]) + ')';
 			});
 		
-		that.helpGroup.selectAll("text")
+		that.helpGroup.selectAll(".helpGroup text")
             .attr('dx', function () {
-			return that.width - d3.transform(d3.select(this.parentElement).attr("transform")).translate[0] > 50 ? 12 : -12;
+			return that.width - d3.transform(d3.select(this.parentNode).attr("transform")).translate[0] > 50 ? 12 : -12;
 			})
-            .attr('text-anchor', function () {return that.width - d3.transform(d3.select(this.parentElement).attr("transform")).translate[0] > 50 ? 'start' : 'end';})
+            .attr('text-anchor', function () {return that.width - d3.transform(d3.select(this.parentNode).attr("transform")).translate[0] > 50 ? 'start' : 'end';})
             .text(function (d, i) {
                 return d3.format(',.2f')(dd[i][1]);
             });
 	
-		that.helpGroup.selectAll('rect')
+		that.helpGroup.selectAll('.textbg')
 			.attr('x', function (d, i) {
-				return that.width - d3.transform(d3.select(this.parentElement).attr("transform")).translate[0] > 50 ? 10 :
+				return that.width - d3.transform(d3.select(this.parentNode).attr("transform")).translate[0] > 50 ? 10 :
 				-14 - getTextWidth(d3.format(',.2f')(dd[i][1]), that.fontSize + 'px ' + that.fontFamily);
 			})
 			.attr('width', function (d, i) {
@@ -896,8 +1070,7 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 			.style("font", style)
 			.text(text);
 
-		//var height = text.node().getBBox().height;
-		var height = text.node().offsetHeight;
+		var height = text.node().offsetHeight || text.node().getBBox().height;
 		
 		text.remove();
 		svg.remove();
@@ -913,5 +1086,7 @@ if (d3lib === null || typeof (d3lib) !== "object") { var d3lib = {};}
 		return w;
 	};
 
+	var getSide = function (i) {return this.series[i].serieId === 0 ? "left" : "right"};
+	
     d3lib.chart = chart;
 })();

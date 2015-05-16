@@ -1,4 +1,4 @@
-//(function(){
+(function(){
     var current = 70;
     var myData = [
                 {
@@ -19,23 +19,27 @@
                     fill : false
                 }
                 ];
-    
+		
     var myArgs = {
         container: currentContainer.charts
         ,series : myData
         ,grid : {show : false, color : "grey"}
         ,fill : false
-        ,guideLine : false
-        ,margin : [5,5,25,35]
+        ,guideLine : true
+        ,highlight : true
+        ,showLegend : true
+        ,margin : [5,35,25,35]
 		,tickSize : [6,6]
         //,margin : [0.01,0.01,0.05,0.05, true]
-		,parseTime : false
+		,autoParseTime : false
         ,zoomable : true
-        ,y : {extent : false, textTickOffset : [-7,0], tickSize : [0,0]}
+		,name : "My graph"
+		,nameInBackground : {show : true}
+        ,y : {left : {extent : false, label : "Temperature", textTickOffset : [-7,0]}, tickSize : [0,0]}
 		,x : {extent : false}
     };
     
     var myChart = new d3lib.chart(myArgs);
     myChart.createVisualization();
 	
-// 	})();
+})();
